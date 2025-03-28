@@ -5,19 +5,19 @@ import { cn } from "@/lib/utils"
 import { usePathname } from "next/navigation"
 
 export function MainNav() {
-  const pathname = usePathname()
+  const pathname = usePathname() || "/"
 
   return (
     <div className="mr-4 flex">
       <Link href="/" className="mr-6 flex items-center space-x-2">
-        <span className="font-bold text-xl">Auction Palace</span>
+        <span className="font-bold text-xl bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">Auction Palace</span>
       </Link>
       <nav className="flex items-center space-x-6 text-sm font-medium">
         <Link
           href="/"
           className={cn(
-            "transition-colors hover:text-primary",
-            pathname === "/" ? "text-primary" : "text-muted-foreground",
+            "transition-colors hover:text-indigo-600",
+            pathname === "/" ? "text-indigo-600 font-semibold" : "text-gray-600",
           )}
         >
           Accueil
@@ -25,8 +25,8 @@ export function MainNav() {
         <Link
           href="/auctions"
           className={cn(
-            "transition-colors hover:text-primary",
-            pathname === "/auctions" ? "text-primary" : "text-muted-foreground",
+            "transition-colors hover:text-indigo-600",
+            pathname === "/auctions" || pathname.startsWith("/auctions/") ? "text-indigo-600 font-semibold" : "text-gray-600",
           )}
         >
           Enchères
@@ -34,8 +34,8 @@ export function MainNav() {
         <Link
           href="/sell"
           className={cn(
-            "transition-colors hover:text-primary",
-            pathname === "/sell" ? "text-primary" : "text-muted-foreground",
+            "transition-colors hover:text-indigo-600",
+            pathname === "/sell" ? "text-indigo-600 font-semibold" : "text-gray-600",
           )}
         >
           Vendre
@@ -43,8 +43,8 @@ export function MainNav() {
         <Link
           href="/about"
           className={cn(
-            "transition-colors hover:text-primary",
-            pathname === "/about" ? "text-primary" : "text-muted-foreground",
+            "transition-colors hover:text-indigo-600",
+            pathname === "/about" ? "text-indigo-600 font-semibold" : "text-gray-600",
           )}
         >
           À propos

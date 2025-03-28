@@ -15,7 +15,7 @@ export default function RegisterPage() {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo')
+  const redirectTo = searchParams?.get('redirectTo')
   const [isPending, startTransition] = useTransition()
   
   // Fonction pour gérer la soumission du formulaire
@@ -48,11 +48,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-indigo-50 via-white to-violet-50">
+      <Card className="w-full max-w-md shadow-lg border-indigo-100 rounded-xl overflow-hidden">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Créer un compte</CardTitle>
-          <CardDescription>Entrez vos informations pour créer un compte</CardDescription>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">Créer un compte</CardTitle>
+          <CardDescription className="text-gray-600">Entrez vos informations pour créer un compte</CardDescription>
         </CardHeader>
         <form action={handleSubmit}>
           {redirectTo && (
@@ -60,32 +60,34 @@ export default function RegisterPage() {
           )}
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-700">Email</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="john@example.com"
                 required
+                className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300 h-12"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Mot de passe</Label>
+              <Label htmlFor="password" className="text-gray-700">Mot de passe</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 required
+                className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300 h-12"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button type="submit" className="w-full" disabled={isPending}>
+            <Button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg" disabled={isPending}>
               {isPending ? "Création du compte..." : "Créer un compte"}
             </Button>
             <div className="text-center text-sm">
               Vous avez déjà un compte?{" "}
-              <Link href={redirectTo ? `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}` : "/auth/login"} className="text-primary underline">
+              <Link href={redirectTo ? `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}` : "/auth/login"} className="text-indigo-600 hover:text-indigo-800 transition-colors duration-200 font-medium">
                 Se connecter
               </Link>
             </div>
