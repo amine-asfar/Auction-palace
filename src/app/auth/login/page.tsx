@@ -22,7 +22,7 @@ function SubmitButton() {
   return (
     <Button 
       type="submit" 
-      className="w-full bg-primary hover:bg-primary/90 transition-colors duration-200" 
+      className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg" 
       disabled={pending}
     >
       {pending ? "Connexion en cours..." : "Se connecter"}
@@ -35,7 +35,7 @@ export default function LoginPage() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const searchParams = useSearchParams()
-  const registered = searchParams.get('registered')
+  const registered = searchParams?.get('registered')
   
   // État initial du formulaire
   const initialState = { errors: {} }
@@ -85,46 +85,46 @@ export default function LoginPage() {
   }, [state.redirect, router, toast])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-primary/5 via-background to-primary/5">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-indigo-50 via-white to-violet-50">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card className="w-full shadow-lg border-primary/20">
+        <Card className="w-full shadow-lg border-indigo-100 rounded-xl overflow-hidden">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">
               Bienvenue
             </CardTitle>
-            <CardDescription className="text-lg">
+            <CardDescription className="text-lg text-gray-600">
               Connectez-vous à votre compte
             </CardDescription>
           </CardHeader>
           <form action={formAction}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-base">Email</Label>
+                <Label htmlFor="email" className="text-base text-gray-700">Email</Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   placeholder="john@example.com"
                   required
-                  className="h-12"
+                  className="h-12 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300"
                 />
                 {state.errors?.email && (
                   <p className="text-sm text-destructive">{state.errors.email[0]}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-base">Mot de passe</Label>
+                <Label htmlFor="password" className="text-base text-gray-700">Mot de passe</Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   required
-                  className="h-12"
+                  className="h-12 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300"
                 />
                 {state.errors?.password && (
                   <p className="text-sm text-destructive">{state.errors.password[0]}</p>
@@ -137,7 +137,7 @@ export default function LoginPage() {
                 Vous n&apos;avez pas de compte?{" "}
                 <Link 
                   href="/auth/register" 
-                  className="text-primary hover:text-primary/80 transition-colors duration-200 font-medium"
+                  className="text-indigo-600 hover:text-indigo-800 transition-colors duration-200 font-medium"
                 >
                   S&apos;inscrire
                 </Link>
