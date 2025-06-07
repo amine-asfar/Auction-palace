@@ -1,10 +1,24 @@
-import { Flex, Text, Button } from "@radix-ui/themes";
+"use client"
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   return (
-    <Flex direction="column" gap="2">
-			<Text>Hello from Radix Themes :)</Text>
-			<Button>Lets go</Button>
-		</Flex>
+    <main>
+      {/* Redirect to /auctions */}
+      <RedirectToAuctions />
+    </main>
   );
+}
+
+// Client-side redirect component
+function RedirectToAuctions() {
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace("/auctions");
+  }, [router]);
+  
+  return null;
 }

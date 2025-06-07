@@ -14,15 +14,6 @@ export function MainNav() {
       </Link>
       <nav className="flex items-center space-x-6 text-sm font-medium">
         <Link
-          href="/"
-          className={cn(
-            "transition-colors hover:text-indigo-600",
-            pathname === "/" ? "text-indigo-600 font-semibold" : "text-gray-600",
-          )}
-        >
-          Accueil
-        </Link>
-        <Link
           href="/auctions"
           className={cn(
             "transition-colors hover:text-indigo-600",
@@ -32,22 +23,13 @@ export function MainNav() {
           Enchères
         </Link>
         <Link
-          href="/sell"
+          href="/create-auction"
           className={cn(
             "transition-colors hover:text-indigo-600",
-            pathname === "/sell" ? "text-indigo-600 font-semibold" : "text-gray-600",
+            pathname === "/create-auction" ? "text-indigo-600 font-semibold" : "text-gray-600",
           )}
         >
           Vendre
-        </Link>
-        <Link
-          href="/about"
-          className={cn(
-            "transition-colors hover:text-indigo-600",
-            pathname === "/about" ? "text-indigo-600 font-semibold" : "text-gray-600",
-          )}
-        >
-          À propos
         </Link>
       </nav>
     </div>

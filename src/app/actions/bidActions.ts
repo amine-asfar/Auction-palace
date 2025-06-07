@@ -2,6 +2,11 @@
 import { createClient } from "@/utils/supabase/server"
 
 export async function placeBid(productId: string, userId: string, bid_amount: number) {
+  // Validate bid amount
+  if (bid_amount > 99999999.99) {
+    throw new Error('Le montant de l\'enchère ne peut pas dépasser 99,999,999.99€')
+  }
+
   const supabase = createClient()
   const productRes = await (await supabase)
     .from('Products')
