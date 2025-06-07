@@ -144,10 +144,12 @@ export async function register(prevState: RegisterFormState, formData: FormData)
       console.error('Erreur d\'inscription:', signUpError)
       
       // Gestion spécifique de l'erreur de limite de taux d'emails
-      if (signUpError.message === 'email rate limit exceeded') {
+      if (signUpError.message === 'email rate limit exceeded' || 
+          signUpError.status === 429 || 
+          signUpError.code === 'over_email_send_rate_limit') {
         return {
           errors: {
-            _form: ['Trop de tentatives d\'inscription. Veuillez attendre quelques minutes ou utiliser une autre adresse email.'],
+            _form: ['Trop de tentatives d\'inscription depuis cette adresse IP. Veuillez attendre 1 heure ou utiliser un autre appareil/réseau.'],
           },
         }
       }
