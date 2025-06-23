@@ -12,13 +12,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/hooks/use-auth"
+import { useAdmin } from "@/hooks/use-admin"
 import Link from "next/link"
-import { Bell, LogOut, Settings, User } from "lucide-react"
+import { Bell, LogOut, Settings, User, Shield } from "lucide-react"
 import { useTransition, useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 
 export function UserNav() {
   const { user, isAuthenticated, isLoading, signOut } = useAuth()
+  const { isAdmin, isLoadingAdmin } = useAdmin()
   const [isPending, startTransition] = useTransition()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
@@ -99,6 +101,14 @@ export function UserNav() {
                 <span>Paramètres</span>
               </Link>
             </DropdownMenuItem>
+            {!isLoadingAdmin && isAdmin && (
+              <DropdownMenuItem asChild className="hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 focus:text-indigo-700 cursor-pointer">
+                <Link href="/admin/verifications">
+                  <Shield className="mr-2 h-4 w-4 text-indigo-600" />
+                  <span>Vérifications</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator className="bg-indigo-100" />
           <DropdownMenuItem onClick={handleLogout} disabled={isPending} className="hover:bg-indigo-50 hover:text-indigo-700 focus:bg-indigo-50 focus:text-indigo-700 cursor-pointer">

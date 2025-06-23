@@ -90,4 +90,84 @@ export async function getAllUserProfiles() {
   
   if (error) throw error
   return data || []
+}
+
+export async function promoteToAdmin(user_id: string) {
+  const supabase = createClient()
+  
+  // First ensure the user profile exists
+  await ensureUserProfile(user_id)
+  
+  // Update the role to admin
+  const { data, error } = await (await supabase)
+    .from('UserProfiles')
+    .update({ role: 'admin' })
+    .eq('user_id', user_id)
+    .select()
+  
+  if (error) throw error
+  return data
+}
+
+export async function checkAdminStatus(user_id: string) {
+  const supabase = createClient()
+  
+  // Try to get the user profile with minimal fields to avoid RLS issues
+  const { data, error } = await (await supabase)
+    .from('UserProfiles')
+    .select('role')
+    .eq('user_id', user_id)
+    .maybeSingle() // Use maybeSingle instead of single to handle no rows
+  
+  if (error) {
+    console.error('Error checking admin status:', error)
+    return false
+  }
+  
+  // If no profile exists, user is not admin
+  if (!data) {
+    return false
+  }
+  
+  return data.role === 'admin'
+}
+
+export async function ensureUserProfile(user_id: string) {
+  const supabase = createClient()
+  
+  // Check if profile exists
+  const { data: existingProfile, error: checkError } = await (await supabase)
+    .from('UserProfiles')
+    .select('id')
+    .eq('user_id', user_id)
+    .maybeSingle()
+  
+  if (checkError) {
+    console.error('Error checking user profile:', checkError)
+    throw checkError
+  }
+  
+  // If profile doesn't exist, create one
+  if (!existingProfile) {
+    const { data: newProfile, error: createError } = await (await supabase)
+      .from('UserProfiles')
+      .insert([{
+        user_id,
+        name: 'Utilisateur',
+        family_name: 'Anonyme',
+        role: 'user',
+        billing_info: 'Aucun fichier fourni'
+      }])
+      .select()
+      .single()
+    
+    if (createError) {
+      console.error('Error creating user profile:', createError)
+      throw createError
+    }
+    
+    return newProfile
+  }
+  
+  return existingProfile
 } 

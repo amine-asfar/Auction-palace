@@ -1,26 +1,76 @@
 'use server'
 import { createClient } from "@/utils/supabase/server"
 
-export async function uploadVerificationFile(user_id: string, file: File, type: string) {
+export async function uploadVerificationFile(user_id: string, file: File) {
   const supabase = createClient()
-  const fileName = `${user_id}/${Date.now()}_${file.name}`
-  const { error: storageError } = await (await supabase)
-    .storage
-    .from('verifications')
-    .upload(fileName, file)
-  if (storageError) throw storageError
-  const file_url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/verifications/${fileName}`
-  const { data, error } = await (await supabase)
-    .from('IdentityVerifications')
-    .insert([{ user_id, type, file_url, status: 'pending' }])
-  if (error) throw error
-  return data
+  
+  try {
+    // First, check if user already has a verification record
+    const { data: existingVerification } = await (await supabase)
+      .from('identityverifications')
+      .select('id, status')
+      .eq('user_id', user_id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    // If user already has a pending or approved verification, don't allow new upload
+    if (existingVerification && (existingVerification.status === 'pending' || existingVerification.status === 'approved')) {
+      throw new Error('Vous avez déjà soumis un document de vérification')
+    }
+
+    // Upload file to storage
+    const fileName = `${user_id}/${Date.now()}_${file.name}`
+    const { error: storageError } = await (await supabase)
+      .storage
+      .from('verifications')
+      .upload(fileName, file)
+    
+    if (storageError) {
+      console.error('Storage error:', storageError)
+      throw new Error('Erreur lors du téléchargement du fichier')
+    }
+
+    // Get the public URL properly
+    const { data: urlData } = (await supabase).storage
+      .from('verifications')
+      .getPublicUrl(fileName)
+    
+    const file_url = urlData.publicUrl
+
+    // Insert verification record with a valid type
+    const { data, error } = await (await supabase)
+      .from('identityverifications')
+      .insert([{ 
+        user_id, 
+        type: 'id',
+        file_url, 
+        status: 'pending' 
+      }])
+      .select()
+    
+    if (error) {
+      console.error('Database error:', error)
+      // If database insert fails, try to delete the uploaded file
+      try {
+        await (await supabase).storage.from('verifications').remove([fileName])
+      } catch (deleteError) {
+        console.error('Failed to delete uploaded file:', deleteError)
+      }
+      throw new Error('Erreur lors de l\'enregistrement de la vérification')
+    }
+    
+    return data
+  } catch (error) {
+    console.error('Upload verification error:', error)
+    throw error
+  }
 }
 
 export async function getVerificationStatus(user_id: string) {
   const supabase = createClient()
   const { data, error } = await (await supabase)
-    .from('IdentityVerifications')
+    .from('identityverifications')
     .select('*')
     .eq('user_id', user_id)
     .order('created_at', { ascending: false })
@@ -32,15 +82,8 @@ export async function getVerificationStatus(user_id: string) {
 export async function GetAllUsersVerifications() {
   const supabase = createClient()
   const { data, error } = await (await supabase)
-    .from('IdentityVerifications')
-    .select(`
-      *,
-      users:user_id (
-        id,
-        email,
-        full_name
-      )
-    `)
+    .from('identityverifications')
+    .select('*')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []
@@ -71,7 +114,7 @@ export async function SetUserVerification(verification_id: string, status: 'appr
   
   // First, get the verification record to access the file_url
   const { data: verification, error: fetchError } = await (await supabase)
-    .from('IdentityVerifications')
+    .from('identityverifications')
     .select('file_url')
     .eq('id', verification_id)
     .single()
@@ -80,7 +123,7 @@ export async function SetUserVerification(verification_id: string, status: 'appr
   
   // Update the verification status
   const { data, error } = await (await supabase)
-    .from('IdentityVerifications')
+    .from('identityverifications')
     .update({ 
       status, 
       updated_at: new Date().toISOString()
@@ -102,4 +145,17 @@ export async function SetUserVerification(verification_id: string, status: 'appr
   }
   
   return data
+}
+
+export async function testVerificationTable() {
+  const supabase = createClient()
+  const { data, error } = await (await supabase)
+    .from('identityverifications')
+    .select('*')
+    .limit(1)
+  if (error) {
+    console.error('Table test error:', error)
+    throw error
+  }
+  return { exists: true, data }
 }

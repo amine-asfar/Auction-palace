@@ -10,7 +10,18 @@ const protectedRoutes = [
   '/profile',
   '/sell',
   '/payment',
+  '/auctions',
   '/auctions/create',
+  '/create-auction',
+  '/admin/verifications',
+]
+
+// Routes qui ne nécessitent pas de vérification
+const verificationExemptRoutes = [
+  '/auth/login',
+  '/auth/register',
+  '/verification-required',
+  '/create-admin',
 ]
 
 export async function middleware(request: NextRequest) {
@@ -63,11 +74,39 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
   )
 
+  // Vérifier si la route est exemptée de vérification
+  const isVerificationExemptRoute = verificationExemptRoutes.some(route => 
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  )
+
   // Si la route est protégée et que l'utilisateur n'est pas authentifié, rediriger vers la page de connexion
   if (isProtectedRoute && !session) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // Si l'utilisateur est authentifié, vérifier s'il a besoin de vérification
+  if (session && isProtectedRoute && !isVerificationExemptRoute) {
+    try {
+      // Vérifier le statut de vérification
+      const { data: verification } = await supabase
+        .from('identityverifications')
+        .select('status')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      // Si pas de vérification ou statut non approuvé, rediriger vers la page de vérification
+      if (!verification || verification.status !== 'approved') {
+        return NextResponse.redirect(new URL('/verification-required', request.url))
+      }
+    } catch (error) {
+      console.error('Error checking verification status:', error)
+      // En cas d'erreur, rediriger vers la page de vérification par sécurité
+      return NextResponse.redirect(new URL('/verification-required', request.url))
+    }
   }
 
   // Si l'utilisateur est déjà authentifié et essaie d'accéder aux pages d'authentification, rediriger vers la page d'accueil
