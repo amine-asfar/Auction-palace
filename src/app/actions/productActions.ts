@@ -12,6 +12,7 @@ export interface ProductData {
   end_time: string
   user_id: string
   image: string
+  min_bid_increment?: number
 }
 
 export interface ProductFilters {
@@ -78,7 +79,7 @@ export async function createProduct(productData: ProductData) {
       current_price: productData.starting_price,
       status: productData.status || "active",
       featured: false,
-      min_bid_increment: Math.ceil(productData.starting_price * 0.1) // 10% of starting price
+      min_bid_increment: productData.min_bid_increment || Math.ceil(productData.starting_price * 0.1) // Use custom value or calculate 10% of starting price
     }])
     .select()
   

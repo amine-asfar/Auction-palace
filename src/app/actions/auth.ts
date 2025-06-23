@@ -1,9 +1,10 @@
-'use server'
+ 'use server'
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { z } from 'zod'
+import { createUserProfile, uploadBillingFile } from './userProfileActions'
 
 // Schéma de validation pour la connexion
 const loginSchema = z.object({
@@ -16,6 +17,11 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   email: z.string().email("Veuillez entrer un email valide"),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+  name: z.string().optional(),
+  family_name: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  billing_file: z.instanceof(File).optional(),
   redirectTo: z.string().optional().nullable(),
 })
 
@@ -32,6 +38,11 @@ export type RegisterFormState = {
   errors?: {
     email?: string[]
     password?: string[]
+    name?: string[]
+    family_name?: string[]
+    phone?: string[]
+    address?: string[]
+    billing_file?: string[]
     _form?: string[]
   }
   redirect?: string
@@ -103,11 +114,19 @@ export async function register(prevState: RegisterFormState, formData: FormData)
   const validatedFields = registerSchema.safeParse({
     email: formData.get('email'),
     password: formData.get('password'),
+    name: formData.get('name'),
+    family_name: formData.get('family_name'),
+    phone: formData.get('phone'),
+    address: formData.get('address'),
+    billing_file: formData.get('billing_file'),
     redirectTo: formData.get('redirectTo') || null,
   })
 
   console.log('Données soumises:', {
     email: formData.get('email'),
+    name: formData.get('name'),
+    family_name: formData.get('family_name'),
+    billing_file: formData.get('billing_file'),
     redirectTo: formData.get('redirectTo'),
   })
 
@@ -121,8 +140,8 @@ export async function register(prevState: RegisterFormState, formData: FormData)
     }
   }
 
-  const { email, password, redirectTo } = validatedFields.data
-  console.log('Données validées:', { email, redirectTo })
+  const { email, password, name, family_name, phone, address, billing_file, redirectTo } = validatedFields.data
+  console.log('Données validées:', { email, name, family_name, redirectTo })
 
   try {
     const supabase = await createClient()
@@ -171,10 +190,43 @@ export async function register(prevState: RegisterFormState, formData: FormData)
       }
     }
 
+    // Upload du fichier de facture
+    let billing_file_url: string | undefined
+    if (billing_file) {
+      try {
+        billing_file_url = await uploadBillingFile(data.user.id, billing_file)
+        console.log('Fichier de facture uploadé avec succès:', billing_file_url)
+      } catch (uploadError) {
+        console.error('Erreur lors de l\'upload du fichier de facture:', uploadError)
+        return {
+          errors: {
+            _form: ['Erreur lors de l\'upload du fichier de facture. Veuillez réessayer.'],
+          },
+        }
+      }
+    }
+
+    // Créer le profil utilisateur avec les informations supplémentaires
+    try {
+      await createUserProfile({
+        user_id: data.user.id,
+        name: name || 'Utilisateur',
+        family_name: family_name || 'Anonyme',
+        phone: phone || undefined,
+        address: address || undefined,
+        billing_info: billing_file_url || 'Aucun fichier fourni',
+        role: 'user', // Par défaut, tous les nouveaux utilisateurs sont des utilisateurs normaux
+      })
+      console.log('Profil utilisateur créé avec succès')
+    } catch (profileError) {
+      console.error('Erreur lors de la création du profil utilisateur:', profileError)
+      // On continue même si la création du profil échoue, car l'utilisateur est déjà créé
+    }
+
     console.log('Inscription réussie, redirection...')
     
     // Construire l'URL de redirection
-    const loginUrl = new URL('/auth/login', process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')
+    const loginUrl = new URL('/auth/login', 'http://localhost:3000')
     loginUrl.searchParams.set('registered', 'true')
     if (redirectTo) {
       loginUrl.searchParams.set('redirectTo', redirectTo)
@@ -183,7 +235,7 @@ export async function register(prevState: RegisterFormState, formData: FormData)
     // Rediriger vers la page de connexion
     return {
       errors: {},
-      redirect: loginUrl.toString(),
+      redirect: loginUrl.pathname + loginUrl.search,
     }
   } catch (error) {
     console.error('Erreur inattendue:', error)
