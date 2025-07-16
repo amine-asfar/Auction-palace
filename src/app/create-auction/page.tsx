@@ -33,6 +33,7 @@ export default function CreateAuctionPage() {
     title: "",
     description: "",
     starting_price: "",
+    min_bid_increment: "",
     image: "",
     end_time: "",
   })
@@ -63,6 +64,28 @@ export default function CreateAuctionPage() {
       return
     }
 
+    // Validate minimum bid increment
+    if (formData.min_bid_increment) {
+      const minBidIncrement = parseFloat(formData.min_bid_increment)
+      if (minBidIncrement <= 0) {
+        toast({
+          title: "Erreur",
+          description: "L'incrément minimum de mise doit être supérieur à 0€",
+          variant: "destructive",
+        })
+        return
+      }
+      
+      if (minBidIncrement >= price) {
+        toast({
+          title: "Erreur",
+          description: "L'incrément minimum de mise ne peut pas être supérieur ou égal au prix de départ",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
     try {
       setIsLoading(true)
       
@@ -75,6 +98,7 @@ export default function CreateAuctionPage() {
         end_time: new Date(formData.end_time).toISOString(),
         user_id: user.id,
         image: formData.image,
+        min_bid_increment: formData.min_bid_increment ? parseFloat(formData.min_bid_increment) : undefined,
       }
 
       const result = await createProduct(productData) as Product[] | null
@@ -150,6 +174,24 @@ export default function CreateAuctionPage() {
               required
               placeholder="Ex: 1000"
             />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="min_bid_increment">
+              Incrément minimum de mise (€)
+            </label>
+            <Input
+              id="min_bid_increment"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.min_bid_increment}
+              onChange={(e) => setFormData({ ...formData, min_bid_increment: e.target.value })}
+              placeholder="Ex: 10 (optionnel - 10% du prix de départ par défaut)"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Montant minimum pour chaque nouvelle enchère. Si non spécifié, sera calculé automatiquement (10% du prix de départ).
+            </p>
           </div>
           
           <div>

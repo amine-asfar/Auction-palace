@@ -6,23 +6,17 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/hooks/use-auth"
+import { useRealtimeBids } from "@/hooks/use-realtime-bids"
 import { cn } from "@/lib/utils"
-import { Clock, Heart, MessageSquare, Share2, User } from "lucide-react"
+import { Clock, Heart, Share2 } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getProductById } from "@/app/actions/productActions"
-import { getBids, placeBid as placeBidAction } from "@/app/actions/bidActions"
+import { placeBid as placeBidAction } from "@/app/actions/bidActions"
+import { RealtimeStatus } from "@/components/realtime-status"
 
 // Types
-interface Bid {
-  id: string
-  user_id: string
-  bid_amount: number
-  created_at: string
-}
-
 interface Seller {
   id: string
   name: string
@@ -69,15 +63,16 @@ export default function AuctionDetailPage() {
   const [bidAmount, setBidAmount] = useState<string>("")
   const [auctionEnded, setAuctionEnded] = useState<boolean>(false)
   const [auction, setAuction] = useState<AuctionData | null>(null)
-  const [bids, setBids] = useState<Bid[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Use real-time hook for bids and current price
+  const { bids, currentPrice, isConnected, isLoading: bidsLoading, error: bidsError, setCurrentPrice } = useRealtimeBids(params.id as string)
 
   useEffect(() => {
     const loadAuctionData = async () => {
       try {
         const auctionData = await getProductById(params.id as string)
-        const bidsData = await getBids(params.id as string)
         
         if (!auctionData) {
           setError("Enchère introuvable")
@@ -100,17 +95,20 @@ export default function AuctionDetailPage() {
           specifications: [], // This should come from a specifications table
           similarItems: [], // This should come from a recommendation system
         })
-        setBids(bidsData || [])
+        
+        // Initialize current price with the product's current price
+        // The real-time hook will update this if there are bids
+        setCurrentPrice(auctionData.current_price)
         setIsLoading(false)
       } catch (err) {
         console.error("Error loading auction:", err)
-        setError(err instanceof Error ? err.message : "Erreur lors du chargement de l'enchère")
+        setError(err instanceof Error ? err.message : "Erreur lors du chargement de l&apos;enchère")
         setIsLoading(false)
       }
     }
     
     loadAuctionData()
-  }, [params.id])
+  }, [params.id, setCurrentPrice])
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("fr-FR", {
@@ -175,19 +173,19 @@ export default function AuctionDetailPage() {
       return
     }
 
-    if (amount <= auction.current_price) {
+    if (amount <= currentPrice) {
       toast({
         title: "Montant trop bas",
-        description: `L&apos;enchère doit être supérieure à ${formatCurrency(auction.current_price)}`,
+        description: `L&apos;enchère doit être supérieure à ${formatCurrency(currentPrice)}`,
         variant: "destructive",
       })
       return
     }
 
-    if (amount < auction.current_price + auction.min_bid_increment) {
+    if (amount < currentPrice + auction.min_bid_increment) {
       toast({
         title: "Montant trop bas",
-        description: `L&apos;enchère minimum est de ${formatCurrency(auction.current_price + auction.min_bid_increment)}`,
+        description: `L&apos;enchère minimum est de ${formatCurrency(currentPrice + auction.min_bid_increment)}`,
         variant: "destructive",
       })
       return
@@ -196,16 +194,7 @@ export default function AuctionDetailPage() {
     try {
       await placeBidAction(auction.id, user.id, amount)
       
-      // Update local state
-      const newBid = {
-        id: Date.now().toString(),
-        user_id: user.id,
-        bid_amount: amount,
-        created_at: new Date().toISOString(),
-      }
-      
-      setBids([newBid, ...bids])
-      setAuction(prev => prev ? { ...prev, current_price: amount } : null)
+      // The real-time hook will automatically update the bids and current price
       setBidAmount("")
       
       toast({
@@ -222,16 +211,54 @@ export default function AuctionDetailPage() {
     }
   }
 
-  if (isLoading) {
-    return <div className="container py-8">Chargement...</div>
+  if (isLoading || bidsLoading) {
+    return (
+      <div className="container py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Chargement de l&apos;enchère...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (error || !auction) {
-    return <div className="container py-8">Une erreur est survenue lors du chargement de l'enchère.</div>
+    return (
+      <div className="container py-8">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Une erreur est survenue lors du chargement de l&apos;enchère.</p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="container py-8 bg-gradient-to-b from-gray-50 to-white">
+      {/* Connection status indicator */}
+      <div className="mb-4 flex justify-between items-center">
+        <RealtimeStatus 
+          isConnected={isConnected} 
+          lastBidTime={bids[0]?.created_at}
+          error={bidsError}
+          className="text-sm"
+        />
+        {!isConnected && (
+          <div className="text-yellow-600 text-sm">
+            ⚠️ Connexion en cours... Les mises à jour en temps réel peuvent être retardées.
+          </div>
+        )}
+        {bidsError && (
+          <div className="text-red-600 text-sm">
+            ⚠️ Erreur de connexion: {bidsError}
+          </div>
+        )}
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Colonne gauche - Images */}
         <div className="lg:col-span-2">
@@ -286,7 +313,7 @@ export default function AuctionDetailPage() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-indigo-600">Enchère actuelle</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(auction.current_price)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentPrice)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-indigo-600">Enchères</p>
@@ -320,10 +347,10 @@ export default function AuctionDetailPage() {
                 <div className="flex gap-2">
                   <Input
                     type="number"
-                    placeholder={`${auction.current_price + auction.min_bid_increment}`}
+                    placeholder={`${currentPrice + auction.min_bid_increment}`}
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    min={auction.current_price + auction.min_bid_increment}
+                    min={currentPrice + auction.min_bid_increment}
                     step={auction.min_bid_increment}
                     className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300"
                   />
@@ -331,7 +358,7 @@ export default function AuctionDetailPage() {
                     Enchérir
                   </Button>
                 </div>
-                <p className="text-xs text-indigo-600">Entrez {formatCurrency(auction.current_price + auction.min_bid_increment)} ou plus</p>
+                <p className="text-xs text-indigo-600">Entrez {formatCurrency(currentPrice + auction.min_bid_increment)} ou plus</p>
               </div>
             )}
           </Card>
@@ -398,7 +425,7 @@ export default function AuctionDetailPage() {
                   </div>
                   
                   <div>
-                    <h3 className="font-medium text-gray-900">Détails de l'enchère</h3>
+                    <h3 className="font-medium text-gray-900">Détails de l&apos;enchère</h3>
                     <dl className="mt-2 space-y-2">
                       <div className="flex justify-between">
                         <dt className="text-gray-600">Prix de départ</dt>
