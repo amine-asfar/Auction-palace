@@ -4,8 +4,11 @@ import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { getUserProfile, getUserPurchaseHistory, getUserStats, UserProfileData, PurchaseHistoryItem } from "@/app/actions/profileActions"
+import { getUserReviews, getReviewableAuctions, getUserRating, Review, ReviewableAuction } from "@/app/actions/reviewActions"
+import { ReviewModal } from "@/components/review-modal"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -21,7 +24,10 @@ import {
   Package,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Star,
+  MessageSquare,
+  Edit3
 } from "lucide-react"
 
 export default function ProfilePage() {
@@ -37,7 +43,14 @@ export default function ProfilePage() {
     totalSpent: 0,
     totalCreated: 0
   })
+  const [userRating, setUserRating] = useState({ averageRating: 0, totalReviews: 0 })
+  const [userReviews, setUserReviews] = useState<Review[]>([])
+  const [reviewableAuctions, setReviewableAuctions] = useState<ReviewableAuction[]>([])
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+
+  // Review modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
+  const [selectedAuction, setSelectedAuction] = useState<ReviewableAuction | null>(null)
 
   // Prevent multiple server calls
   const loadedUserRef = useRef<string | null>(null)
@@ -58,15 +71,27 @@ export default function ProfilePage() {
         setIsLoadingProfile(true)
 
         // Load all data in parallel
-        const [profile, history, stats] = await Promise.all([
+        const [profile, history, stats, rating, reviews, reviewable] = await Promise.all([
           getUserProfile(user.id),
           getUserPurchaseHistory(user.id),
-          getUserStats(user.id)
+          getUserStats(user.id),
+          getUserRating(user.id),
+          getUserReviews(user.id),
+          getReviewableAuctions(user.id)
         ])
+
+        console.log('📊 Profile data loaded:', {
+          reviewableAuctions: reviewable,
+          reviewableCount: reviewable.length,
+          canReviewCount: reviewable.filter(a => a.can_review).length
+        })
 
         if (profile) setUserProfile(profile)
         setPurchaseHistory(history)
         setUserStats(stats)
+        setUserRating(rating)
+        setUserReviews(reviews)
+        setReviewableAuctions(reviewable)
         loadedUserRef.current = user.id
       } catch {
         // Error loading data - use fallback
@@ -151,6 +176,19 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">
             Mon Profil
           </h1>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Force refresh by clearing the loaded user ref
+                loadedUserRef.current = null
+                window.location.reload()
+              }}
+            >
+              🔄 Actualiser
+            </Button>
+          </div>
         </div>
 
         {/* Main Profile Card */}
@@ -364,6 +402,150 @@ export default function ProfilePage() {
           </div>
         </Card>
 
+        {/* Reviews Received Card */}
+        <Card className="border-indigo-100 shadow-sm">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <Star className="h-5 w-5 text-indigo-600" />
+                <h3 className="text-lg font-medium text-gray-900">Avis reçus</h3>
+              </div>
+              {userRating.totalReviews > 0 && (
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center">
+                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    <span className="text-lg font-semibold ml-1">{userRating.averageRating}</span>
+                  </div>
+                  <span className="text-gray-600">({userRating.totalReviews} avis)</span>
+                </div>
+              )}
+            </div>
+            
+            {userReviews.length > 0 ? (
+              <div className="space-y-4">
+                {userReviews.slice(0, 5).map((review) => (
+                  <div key={review.id} className="p-4 rounded-lg border border-indigo-100 bg-indigo-50/50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-900">
+                          {review.reviewer_name} {review.reviewer_family_name}
+                        </span>
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < review.rating 
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(review.created_at).toLocaleDateString("fr-FR")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 mb-2">{review.comment}</p>
+                    <p className="text-xs text-gray-500">Produit: {review.product_title}</p>
+                  </div>
+                ))}
+                {userReviews.length > 5 && (
+                  <div className="text-center">
+                    <Button variant="outline">Voir tous les avis ({userReviews.length})</Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-2">Aucun avis pour le moment</p>
+                <p className="text-sm text-gray-500">
+                  Les avis de vos acheteurs apparaîtront ici
+                </p>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Reviewable Auctions Card */}
+        <Card className="border-indigo-100 shadow-sm">
+          <div className="p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <Edit3 className="h-5 w-5 text-indigo-600" />
+              <h3 className="text-lg font-medium text-gray-900">Laisser un avis</h3>
+              <span className="text-sm text-gray-600">
+                ({reviewableAuctions.filter(a => a.can_review).length} en attente, {reviewableAuctions.length} total)
+              </span>
+            </div>
+            
+            {reviewableAuctions.length > 0 ? (
+              
+              <div className="space-y-4">
+                {reviewableAuctions.map((auction) => (
+                  <div key={auction.id} className="p-4 rounded-lg border border-indigo-100 hover:bg-indigo-50 transition-colors">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        <img
+                          src={auction.product_image || '/placeholder-image.jpg'}
+                          alt={auction.product_title}
+                          className="w-16 h-16 rounded-lg object-cover border border-indigo-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.src = '/placeholder-image.jpg'
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 truncate">
+                          {auction.product_title}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Vendeur: {auction.seller_name} {auction.seller_family_name}
+                        </p>
+                        <p className="text-sm font-semibold text-indigo-600">
+                          Prix payé: {auction.purchase_price.toLocaleString("fr-FR", {
+                            style: "currency",
+                            currency: "EUR"
+                          })}
+                        </p>
+                      </div>
+                      <div>
+                        {auction.can_review ? (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedAuction(auction)
+                              setReviewModalOpen(true)
+                            }}
+                            className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700"
+                          >
+                            Laisser un avis
+                          </Button>
+                        ) : (
+                          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Avis laissé
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-2">Aucune enchère à évaluer</p>
+                <p className="text-sm text-gray-500">
+                  Gagnez des enchères pour pouvoir laisser des avis aux vendeurs
+                </p>
+              </div>
+            )}
+            </div>
+          </Card>
+
         {/* Account Settings Card */}
         <Card className="border-indigo-100 shadow-sm">
           <div className="p-6">
@@ -396,6 +578,27 @@ export default function ProfilePage() {
           </div>
         </Card>
       </div>
+      
+      {/* Review Modal */}
+      {selectedAuction && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false)
+            setSelectedAuction(null)
+          }}
+          productId={selectedAuction.product_id}
+          sellerId={selectedAuction.seller_id}
+          sellerName={`${selectedAuction.seller_name} ${selectedAuction.seller_family_name}`}
+          productTitle={selectedAuction.product_title}
+          onReviewSubmitted={() => {
+            // Refresh reviewable auctions
+            if (user) {
+              getReviewableAuctions(user.id).then(setReviewableAuctions)
+            }
+          }}
+        />
+      )}
     </div>
   )
 } 
