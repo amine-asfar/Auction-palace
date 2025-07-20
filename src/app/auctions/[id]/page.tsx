@@ -6,15 +6,16 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/hooks/use-auth"
-import { useRealtimeBids } from "@/hooks/use-realtime-bids"
+import { useRealtimeBids, RealtimeBid } from "@/hooks/use-realtime-bids"
 import { cn } from "@/lib/utils"
 import { Clock, Heart, Share2 } from "lucide-react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { getProductById } from "@/app/actions/productActions"
 import { placeBid as placeBidAction } from "@/app/actions/bidActions"
 import { RealtimeStatus } from "@/components/realtime-status"
+import { checkIfUserWonAuction } from "@/app/actions/auctionHelpers"
 
 // Types
 interface Seller {
@@ -65,18 +66,71 @@ export default function AuctionDetailPage() {
   const [auction, setAuction] = useState<AuctionData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isWinner, setIsWinner] = useState<boolean>(false)
+  const [winnerChecked, setWinnerChecked] = useState<boolean>(false)
 
-  // Use real-time hook for bids and current price
-  const { bids, currentPrice, isConnected, isLoading: bidsLoading, error: bidsError, setCurrentPrice } = useRealtimeBids(params.id as string)
+  // Use refs to prevent multiple server action calls
+  const loadedAuctionRef = useRef<string | null>(null)
+  const isLoadingAuctionRef = useRef(false)
+  const winnerCheckInProgressRef = useRef(false)
+
+  // Use refs to avoid stale closure in timer
+  const auctionRef = useRef(auction)
+  const auctionEndedRef = useRef(auctionEnded)
+  const userRef = useRef(user)
+  const winnerCheckedRef = useRef(winnerChecked)
+
+  // Update refs when values change
+  useEffect(() => {
+    auctionRef.current = auction
+  }, [auction])
 
   useEffect(() => {
+    auctionEndedRef.current = auctionEnded
+  }, [auctionEnded])
+
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
+
+  useEffect(() => {
+    winnerCheckedRef.current = winnerChecked
+  }, [winnerChecked])
+
+  // Reset refs when auction ID changes
+  useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts or auction changes
+      isLoadingAuctionRef.current = false
+      winnerCheckInProgressRef.current = false
+    }
+  }, [params.id])
+
+  // Use real-time hook for bids and current price
+  const { bids, currentPrice, isConnected, isLoading: bidsLoading, error: bidsError } = useRealtimeBids(params.id as string)
+
+  useEffect(() => {
+    const auctionId = params.id as string
+    
+    // Prevent multiple calls for the same auction
+    if (!auctionId || loadedAuctionRef.current === auctionId || isLoadingAuctionRef.current) {
+      return
+    }
+
     const loadAuctionData = async () => {
       try {
-        const auctionData = await getProductById(params.id as string)
+        isLoadingAuctionRef.current = true
+        setIsLoading(true)
+        
+        // Reset winner check status for new auction
+        setWinnerChecked(false)
+        
+        const auctionData = await getProductById(auctionId)
         
         if (!auctionData) {
           setError("Enchère introuvable")
           setIsLoading(false)
+          isLoadingAuctionRef.current = false
           return
         }
         
@@ -96,19 +150,18 @@ export default function AuctionDetailPage() {
           similarItems: [], // This should come from a recommendation system
         })
         
-        // Initialize current price with the product's current price
-        // The real-time hook will update this if there are bids
-        setCurrentPrice(auctionData.current_price)
+        loadedAuctionRef.current = auctionId
         setIsLoading(false)
       } catch (err) {
-        console.error("Error loading auction:", err)
-        setError(err instanceof Error ? err.message : "Erreur lors du chargement de l&apos;enchère")
+        setError(err instanceof Error ? err.message : "Erreur lors du chargement de l'enchère")
         setIsLoading(false)
+      } finally {
+        isLoadingAuctionRef.current = false
       }
     }
     
     loadAuctionData()
-  }, [params.id, setCurrentPrice])
+  }, [params.id]) // Remove setCurrentPrice dependency to prevent loops
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("fr-FR", {
@@ -118,16 +171,63 @@ export default function AuctionDetailPage() {
     }).format(amount)
   }
 
+  const getUserName = (bid: RealtimeBid): string => {
+    if (bid.UserProfiles && bid.UserProfiles.length > 0) {
+      const profile = bid.UserProfiles[0]
+      
+      // Handle cases where names might be duplicated
+      const name = profile.name || ''
+      const familyName = profile.family_name || ''
+      
+      // If they're the same, just return one
+      if (name === familyName) {
+        return name.trim()
+      }
+      
+      // If name already contains family name, just return name
+      if (name.includes(familyName) && familyName.length > 2) {
+        return name.trim()
+      }
+      
+      // If family name contains name, just return family name
+      if (familyName.includes(name) && name.length > 2) {
+        return familyName.trim()
+      }
+      
+      // Normal case: combine them
+      return `${name} ${familyName}`.trim()
+    }
+    return `Utilisateur ${bid.user_id.substring(0, 8)}...` // Fallback to shortened user ID
+  }
+
   const updateTimeLeft = () => {
-    if (!auction) return
+    const currentAuction = auctionRef.current
+    const currentAuctionEnded = auctionEndedRef.current
+    const currentUser = userRef.current
+    
+    if (!currentAuction) return
     
     const now = new Date()
-    const endTime = new Date(auction.end_time)
+    const endTime = new Date(currentAuction.end_time)
     const diff = endTime.getTime() - now.getTime()
     
     if (diff <= 0) {
       setTimeLeft("Enchère terminée")
-      setAuctionEnded(true)
+      // Only check winner status once when auction ends
+      if (!currentAuctionEnded && currentUser && !winnerCheckedRef.current && !winnerCheckInProgressRef.current) {
+        setAuctionEnded(true)
+        setWinnerChecked(true)
+        winnerCheckInProgressRef.current = true
+        
+        // Use a promise that only executes once to prevent multiple calls
+        checkIfUserWonAuction(currentAuction.id, currentUser.id).then((won) => {
+          setIsWinner(won)
+        }).catch(() => {
+          // Ignore errors to prevent console spam
+        }).finally(() => {
+          winnerCheckInProgressRef.current = false
+        })
+      }
       return
     }
     
@@ -148,7 +248,7 @@ export default function AuctionDetailPage() {
   useEffect(() => {
     const timer = setInterval(updateTimeLeft, 1000)
     return () => clearInterval(timer)
-  }, [auction])
+  }, []) // No dependencies needed since updateTimeLeft uses refs
 
   const handleBid = async () => {
     if (!user) {
@@ -202,10 +302,9 @@ export default function AuctionDetailPage() {
         description: `Votre enchère de ${formatCurrency(amount)} a été placée avec succès.`,
       })
     } catch (err) {
-      console.error("Error placing bid:", err)
       toast({
         title: "Erreur",
-        description: err instanceof Error ? err.message : "Une erreur est survenue lors de l&apos;enchère. Veuillez réessayer.",
+        description: err instanceof Error ? err.message : "Une erreur est survenue lors de l'enchère. Veuillez réessayer.",
         variant: "destructive",
       })
     }
@@ -332,16 +431,22 @@ export default function AuctionDetailPage() {
                 <p className="font-medium mb-1 text-xs text-indigo-700">Activité récente:</p>
                 {bids.slice(0, 5).map((bid) => (
                   <div key={bid.id} className="text-xs py-1 border-b last:border-0">
-                    <span className="font-semibold">{bid.user_id}</span>: {formatCurrency(bid.bid_amount)}
+                    <span className="font-semibold">{getUserName(bid)}</span>: {formatCurrency(bid.bid_amount)}
                   </div>
                 ))}
               </div>
             )}
 
             {auctionEnded ? (
-              <Button onClick={() => router.push(`/payment/${params.id}`)} className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg">
-                Acheter Maintenant
-              </Button>
+              isWinner ? (
+                <Button onClick={() => router.push(`/payment/${params.id}`)} className="w-full mt-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg">
+                  🎉 Payer - Vous avez gagné!
+                </Button>
+              ) : (
+                <div className="w-full mt-4 p-3 text-center text-gray-600 bg-gray-100 rounded-lg">
+                  Enchère terminée - Vous n&apos;avez pas gagné cette enchère
+                </div>
+              )
             ) : (
               <div className="mt-4 space-y-2">
                 <div className="flex gap-2">
@@ -388,7 +493,7 @@ export default function AuctionDetailPage() {
                     {bids.length > 0 ? (
                       bids.map((bid) => (
                         <div key={bid.id} className="grid grid-cols-3 p-3 hover:bg-indigo-50 transition-colors">
-                          <div className="text-indigo-700 font-medium">{bid.user_id}</div>
+                          <div className="text-indigo-700 font-medium">{getUserName(bid)}</div>
                           <div className="text-gray-900">{formatCurrency(bid.bid_amount)}</div>
                           <div className="text-gray-500">
                             {new Date(bid.created_at).toLocaleString()}

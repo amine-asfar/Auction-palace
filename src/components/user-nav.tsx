@@ -33,8 +33,8 @@ export function UserNav() {
     startTransition(async () => {
       try {
         await signOut()
-      } catch (error) {
-        console.error("Erreur lors de la déconnexion:", error)
+      } catch {
+        // Sign out error handled silently
       }
     })
   }

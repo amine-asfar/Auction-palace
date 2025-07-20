@@ -11,8 +11,6 @@ export async function createClient() {
     throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined')
   }
 
-  console.log('Création du client Supabase avec URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

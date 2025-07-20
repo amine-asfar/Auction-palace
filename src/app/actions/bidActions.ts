@@ -56,13 +56,42 @@ export async function placeBid(productId: string, userId: string, bid_amount: nu
 
 export async function getBids(productId: string) {
   const supabase = createClient()
-  const { data, error } = await (await supabase)
+  
+  // First, let's try a simpler approach and fetch the data separately
+  const { data: bids, error: bidError } = await (await supabase)
     .from('Bids')
     .select('*')
     .eq('product_id', productId)
     .order('created_at', { ascending: false })
-  if (error) throw error
-  return data
+  
+  if (bidError) throw bidError
+  
+  if (!bids || bids.length === 0) return []
+  
+  // Get all unique user IDs
+  const userIds = [...new Set(bids.map(bid => bid.user_id))]
+  
+  // Fetch user profiles separately
+  const { data: profiles, error: profileError } = await (await supabase)
+    .from('UserProfiles')
+    .select('user_id, name, family_name')
+    .in('user_id', userIds)
+  
+  if (profileError) {
+    // Return bids without profiles if profile fetch fails
+    return bids.map(bid => ({ ...bid, UserProfiles: null }))
+  }
+  
+  // Combine bids with their user profiles
+  const bidsWithProfiles = bids.map(bid => {
+    const userProfile = profiles?.find(profile => profile.user_id === bid.user_id)
+    return {
+      ...bid,
+      UserProfiles: userProfile ? [userProfile] : null
+    }
+  })
+  
+  return bidsWithProfiles
 }
 
 export async function GetHistoriqueAchats(userId: string) {

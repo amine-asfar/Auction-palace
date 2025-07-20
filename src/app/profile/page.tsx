@@ -2,10 +2,10 @@
 
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
+import { getUserProfile, getUserPurchaseHistory, getUserStats, UserProfileData, PurchaseHistoryItem } from "@/app/actions/profileActions"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -13,85 +13,71 @@ import {
   Mail, 
   Calendar, 
   Shield, 
-  Edit3, 
-  Camera,
   Settings,
   Award,
   TrendingUp,
   MapPin,
   CreditCard,
   Package,
-  Clock,
   CheckCircle,
   XCircle,
   AlertCircle
 } from "lucide-react"
 
-// Types pour les données statiques
-interface UserProfile {
-  id: string
-  email: string
-  first_name?: string
-  last_name?: string
-  address?: string
-  city?: string
-  postal_code?: string
-  country?: string
-  identity_status: 'pending' | 'verified' | 'rejected'
-  identity_document_url?: string
-  created_at: string
-  updated_at: string
-}
-
-interface PurchaseHistory {
-  id: string
-  product_id: string
-  product_title: string
-  product_image: string
-  purchase_price: number
-  purchase_date: string
-  status: 'won' | 'paid' | 'delivered'
-}
-
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
-  // Données statiques pour le design
-  const userProfile: UserProfile = {
-    id: user?.id || '1',
-    email: user?.email || 'john.doe@example.com',
-    first_name: 'Jean',
-    last_name: 'Dupont',
-    address: '123 Rue de la Paix',
-    city: 'Paris',
-    postal_code: '75001',
-    country: 'France',
-    identity_status: 'verified', // Peut être 'pending', 'verified', ou 'rejected'
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z'
-  }
+  // Real data state
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
+  const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistoryItem[]>([])
+  const [userStats, setUserStats] = useState({
+    totalBids: 0,
+    totalWon: 0,
+    totalSpent: 0,
+    totalCreated: 0
+  })
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
-  const purchaseHistory: PurchaseHistory[] = [
-    {
-      id: '1',
-      product_id: '1',
-      product_title: 'Montre Rolex Submariner Vintage',
-      product_image: 'https://images.unsplash.com/photo-1594534475808-b18fc33b045e?w=400',
-      purchase_price: 8500,
-      purchase_date: '2024-01-10T14:30:00Z',
-      status: 'delivered'
-    },
-    {
-      id: '2',
-      product_id: '2',
-      product_title: 'Tableau Impressionniste Original',
-      product_image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400',
-      purchase_price: 3200,
-      purchase_date: '2024-01-08T16:45:00Z',
-      status: 'paid'
+  // Prevent multiple server calls
+  const loadedUserRef = useRef<string | null>(null)
+  const isLoadingRef = useRef(false)
+
+  // Load real user data
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!isAuthenticated || !user) return
+      
+      // Prevent multiple calls for the same user
+      if (loadedUserRef.current === user.id || isLoadingRef.current) {
+        return
+      }
+
+      try {
+        isLoadingRef.current = true
+        setIsLoadingProfile(true)
+
+        // Load all data in parallel
+        const [profile, history, stats] = await Promise.all([
+          getUserProfile(user.id),
+          getUserPurchaseHistory(user.id),
+          getUserStats(user.id)
+        ])
+
+        if (profile) setUserProfile(profile)
+        setPurchaseHistory(history)
+        setUserStats(stats)
+        loadedUserRef.current = user.id
+      } catch {
+        // Error loading data - use fallback
+      } finally {
+        setIsLoadingProfile(false)
+        isLoadingRef.current = false
+      }
     }
-  ]
+
+    loadUserData()
+  }, [user, isAuthenticated])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -128,7 +114,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingProfile) {
     return (
       <div className="container py-8">
         <div className="max-w-4xl mx-auto">
@@ -165,10 +151,6 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">
             Mon Profil
           </h1>
-          <Button variant="outline" className="border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">
-            <Edit3 className="h-4 w-4 mr-2" />
-            Modifier le profil
-          </Button>
         </div>
 
         {/* Main Profile Card */}
@@ -187,12 +169,6 @@ export default function ProfilePage() {
                       {user?.email?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <Button 
-                    size="icon" 
-                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-lg"
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
                 </div>
                 <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-200">
                   <Shield className="h-3 w-3 mr-1" />
@@ -204,8 +180,8 @@ export default function ProfilePage() {
               <div className="flex-1 space-y-6">
                 <div>
                   <h2 className="text-2xl font-semibold mb-2">
-                    {userProfile?.first_name && userProfile?.last_name 
-                      ? `${userProfile.first_name} ${userProfile.last_name}`
+                    {userProfile?.name && userProfile?.family_name 
+                      ? `${userProfile.name} ${userProfile.family_name}`
                       : user?.user_metadata?.name || "Utilisateur"
                     }
                   </h2>
@@ -235,8 +211,8 @@ export default function ProfilePage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">Nom complet</p>
                         <p className="text-sm text-gray-600">
-                          {userProfile?.first_name && userProfile?.last_name 
-                            ? `${userProfile.first_name} ${userProfile.last_name}`
+                          {userProfile?.name && userProfile?.family_name 
+                            ? `${userProfile.name} ${userProfile.family_name}`
                             : "Non renseigné"
                           }
                         </p>
@@ -252,12 +228,6 @@ export default function ProfilePage() {
                       {userProfile?.address ? (
                         <div className="text-sm text-gray-600">
                           <p>{userProfile.address}</p>
-                          {userProfile.city && userProfile.postal_code && (
-                            <p>{userProfile.postal_code} {userProfile.city}</p>
-                          )}
-                          {userProfile.country && (
-                            <p>{userProfile.country}</p>
-                          )}
                         </div>
                       ) : (
                         <p className="text-sm text-gray-600">Non renseignée</p>
@@ -303,7 +273,7 @@ export default function ProfilePage() {
                       <div className="flex items-center space-x-3">
                         <TrendingUp className="h-8 w-8 text-indigo-600" />
                         <div>
-                          <p className="text-2xl font-bold text-gray-900">{purchaseHistory.length}</p>
+                          <p className="text-2xl font-bold text-gray-900">{userStats.totalWon}</p>
                           <p className="text-sm text-gray-600">Enchères gagnées</p>
                         </div>
                       </div>
@@ -312,7 +282,7 @@ export default function ProfilePage() {
                       <div className="flex items-center space-x-3">
                         <Award className="h-8 w-8 text-violet-600" />
                         <div>
-                          <p className="text-2xl font-bold text-gray-900">0</p>
+                          <p className="text-2xl font-bold text-gray-900">{userStats.totalCreated}</p>
                           <p className="text-sm text-gray-600">Enchères créées</p>
                         </div>
                       </div>
@@ -322,7 +292,7 @@ export default function ProfilePage() {
                         <CreditCard className="h-8 w-8 text-indigo-600" />
                         <div>
                           <p className="text-2xl font-bold text-gray-900">
-                            {purchaseHistory.reduce((total: number, purchase: PurchaseHistory) => total + purchase.purchase_price, 0).toLocaleString("fr-FR", {
+                            {userStats.totalSpent.toLocaleString("fr-FR", {
                               style: "currency",
                               currency: "EUR",
                               minimumFractionDigits: 0,
@@ -345,12 +315,12 @@ export default function ProfilePage() {
           <div className="p-6">
             <div className="flex items-center space-x-3 mb-6">
               <Package className="h-5 w-5 text-indigo-600" />
-              <h3 className="text-lg font-medium text-gray-900">Historique d'achat</h3>
+              <h3 className="text-lg font-medium text-gray-900">Historique d&apos;achat</h3>
             </div>
             
             {purchaseHistory.length > 0 ? (
                              <div className="space-y-4">
-                 {purchaseHistory.map((purchase: PurchaseHistory) => (
+                 {purchaseHistory.map((purchase: PurchaseHistoryItem) => (
                   <div key={purchase.id} className="p-4 rounded-lg border border-indigo-100 hover:bg-indigo-50 transition-colors">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">

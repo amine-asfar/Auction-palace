@@ -66,8 +66,8 @@ export async function middleware(request: NextRequest) {
   
   // Vérifier si l'utilisateur est authentifié
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Vérifier si la route actuelle est protégée
   const isProtectedRoute = protectedRoutes.some(route => 
@@ -80,20 +80,20 @@ export async function middleware(request: NextRequest) {
   )
 
   // Si la route est protégée et que l'utilisateur n'est pas authentifié, rediriger vers la page de connexion
-  if (isProtectedRoute && !session) {
+  if (isProtectedRoute && !user) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
   // Si l'utilisateur est authentifié, vérifier s'il a besoin de vérification
-  if (session && isProtectedRoute && !isVerificationExemptRoute) {
+  if (user && isProtectedRoute && !isVerificationExemptRoute) {
     try {
       // Vérifier le statut de vérification
       const { data: verification } = await supabase
         .from('identityverifications')
         .select('status')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -110,7 +110,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Si l'utilisateur est déjà authentifié et essaie d'accéder aux pages d'authentification, rediriger vers la page d'accueil
-  if (session && (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/register'))) {
+  if (user && (request.nextUrl.pathname.startsWith('/auth/login') || request.nextUrl.pathname.startsWith('/auth/register'))) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

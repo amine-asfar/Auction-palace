@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { getBids } from '@/app/actions/bidActions'
@@ -9,6 +9,10 @@ export interface RealtimeBid {
   bid_amount: number
   created_at: string
   product_id: string
+  UserProfiles?: {
+    name: string
+    family_name: string
+  }[] | null
 }
 
 export interface RealtimeProduct {
@@ -23,35 +27,46 @@ export function useRealtimeBids(productId: string) {
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
-  // Load initial data
-  const loadInitialData = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const initialBids = await getBids(productId)
-      if (initialBids) {
-        setBids(initialBids)
-        // Set current price to the highest bid amount
-        if (initialBids.length > 0) {
-          const highestBid = Math.max(...initialBids.map(bid => bid.bid_amount))
-          setCurrentPrice(highestBid)
+  // Use a ref to track if data has been loaded for this product
+  const loadedProductRef = useRef<string | null>(null)
+  const isLoadingRef = useRef(false)
+
+  // Load initial data - moved inside useEffect to avoid re-creation
+  useEffect(() => {
+    // Prevent multiple calls to getBids
+    if (!productId || loadedProductRef.current === productId || isLoadingRef.current) return
+
+    const loadInitialData = async () => {
+      try {
+        isLoadingRef.current = true
+        setIsLoading(true)
+        
+        const initialBids = await getBids(productId)
+        if (initialBids) {
+          // Batch state updates to reduce re-renders
+          setBids(initialBids)
+          // Set current price to the highest bid amount
+          if (initialBids.length > 0) {
+            const highestBid = Math.max(...initialBids.map(bid => bid.bid_amount))
+            setCurrentPrice(highestBid)
+          }
         }
-        // If no bids, the current price will be set by the product channel or remain at 0
+        setError(null)
+        loadedProductRef.current = productId
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load bids')
+      } finally {
+        setIsLoading(false)
+        isLoadingRef.current = false
       }
-    } catch (err) {
-      console.error('Error loading initial bids:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load bids')
-    } finally {
-      setIsLoading(false)
     }
+
+    loadInitialData()
   }, [productId])
 
-  useEffect(() => {
-    loadInitialData()
-  }, [loadInitialData])
+
 
   useEffect(() => {
     let bidsChannel: RealtimeChannel
@@ -60,7 +75,6 @@ export function useRealtimeBids(productId: string) {
 
     const setupRealtime = async () => {
       try {
-        console.log('Setting up real-time connection for product:', productId)
         
         // Subscribe to bids changes
         bidsChannel = supabase
@@ -74,10 +88,22 @@ export function useRealtimeBids(productId: string) {
               filter: `product_id=eq.${productId}`
             },
             async (payload) => {
-              console.log('Bid change received:', payload)
-              
               if (payload.eventType === 'INSERT') {
-                const newBid = payload.new as RealtimeBid
+                const newBidData = payload.new as RealtimeBid
+                
+                // Fetch user profile information for the new bid
+                const { data: userProfile } = await supabase
+                  .from('UserProfiles')
+                  .select('user_id, name, family_name')
+                  .eq('user_id', newBidData.user_id)
+                  .single()
+
+                // Combine the bid data with user profile
+                const newBid = {
+                  ...newBidData,
+                  UserProfiles: userProfile ? [userProfile] : null
+                }
+                
                 setBids(prevBids => {
                   // Check if bid already exists to avoid duplicates
                   const exists = prevBids.some(bid => bid.id === newBid.id)
@@ -125,8 +151,6 @@ export function useRealtimeBids(productId: string) {
               filter: `id=eq.${productId}`
             },
             (payload) => {
-              console.log('Product change received:', payload)
-              
               if (payload.eventType === 'UPDATE') {
                 const updatedProduct = payload.new as RealtimeProduct
                 setCurrentPrice(updatedProduct.current_price)
@@ -136,31 +160,21 @@ export function useRealtimeBids(productId: string) {
 
         // Subscribe to channels
         await bidsChannel.subscribe((status) => {
-          console.log('Bids channel status:', status)
           setIsConnected(status === 'SUBSCRIBED')
-          
-          if (status === 'SUBSCRIBED') {
-            console.log('Successfully connected to bids real-time channel')
-          }
           
           // If connection is lost, try to reconnect after 5 seconds
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            console.log('Connection lost, attempting to reconnect...')
             reconnectTimer = setTimeout(() => {
               setupRealtime()
             }, 5000)
           }
         })
 
-        await productChannel.subscribe((status) => {
-          console.log('Product channel status:', status)
-          if (status === 'SUBSCRIBED') {
-            console.log('Successfully connected to product real-time channel')
-          }
+        await productChannel.subscribe(() => {
+          // Product channel connected
         })
 
       } catch (err) {
-        console.error('Error setting up real-time connection:', err)
         setError(err instanceof Error ? err.message : 'Failed to connect to real-time updates')
         setIsConnected(false)
       }
@@ -180,7 +194,7 @@ export function useRealtimeBids(productId: string) {
         supabase.removeChannel(productChannel)
       }
     }
-  }, [productId, supabase])
+  }, [productId])
 
   return {
     bids,
@@ -189,7 +203,6 @@ export function useRealtimeBids(productId: string) {
     isLoading,
     error,
     setBids, // Allow manual updates when needed
-    setCurrentPrice, // Allow manual updates when needed
-    refetch: loadInitialData // Allow manual refetch
+    setCurrentPrice // Allow manual updates when needed
   }
 } 

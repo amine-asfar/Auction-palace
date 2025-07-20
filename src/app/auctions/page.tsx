@@ -42,8 +42,8 @@ export default function AuctionsPage() {
         setIsLoading(true)
         const initialAuctions = await getProducts()
         setAuctions(initialAuctions || [])
-      } catch (error) {
-        console.error('Error loading auctions:', error)
+      } catch {
+        // Error loading auctions
       } finally {
         setIsLoading(false)
       }
@@ -69,8 +69,6 @@ export default function AuctionsPage() {
               table: 'Products'
             },
             (payload) => {
-              console.log('Product update received:', payload)
-              
               if (payload.eventType === 'UPDATE') {
                 const updatedProduct = payload.new as ProductUpdate
                 setAuctions(prevAuctions => 
@@ -84,12 +82,12 @@ export default function AuctionsPage() {
             }
           )
 
-        await productChannel.subscribe((status) => {
-          console.log('Products channel status:', status)
+        await productChannel.subscribe(() => {
+          // Channel subscribed
         })
 
-      } catch (err) {
-        console.error('Error setting up real-time connection:', err)
+      } catch {
+        // Real-time connection failed
       }
     }
 

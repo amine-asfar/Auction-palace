@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useEffect, useState, useCallback } from "react"
+import { createContext, useEffect, useState, useCallback, useMemo } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { User } from "@supabase/supabase-js"
 import { useRouter, usePathname } from "next/navigation"
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
   const pathname = usePathname()
 
@@ -35,11 +35,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user || null)
       setIsAuthenticated(!!session?.user)
-      router.refresh()
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement de la session:", error)
+      // Remove router.refresh() as it causes unnecessary page refreshes
+    } catch {
+      // Session refresh failed silently
     }
-  }, [supabase, router])
+  }, [supabase])
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -60,12 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(!!session?.user)
         
         if (event === 'SIGNED_IN') {
-          router.refresh()
+          // Remove router.refresh() to prevent cascading re-renders
           if (pathname.startsWith('/auth/')) {
             router.push('/')
           }
         } else if (event === 'SIGNED_OUT') {
-          router.refresh()
+          // Remove router.refresh() to prevent cascading re-renders
           router.push('/auth/login')
         }
       }
@@ -82,8 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut()
       setUser(null)
       setIsAuthenticated(false)
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error)
+    } catch {
+      // Sign out failed silently
     } finally {
       setIsLoading(false)
     }
