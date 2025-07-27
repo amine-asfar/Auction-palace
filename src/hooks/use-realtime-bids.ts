@@ -43,15 +43,28 @@ export function useRealtimeBids(productId: string) {
         isLoadingRef.current = true
         setIsLoading(true)
         
+        // First, get the product data to have the starting price
+        const { data: product } = await supabase
+          .from('Products')
+          .select('current_price, starting_price')
+          .eq('id', productId)
+          .single()
+        
         const initialBids = await getBids(productId)
         if (initialBids) {
           // Batch state updates to reduce re-renders
           setBids(initialBids)
-          // Set current price to the highest bid amount
+          // Set current price to the highest bid amount, or starting price if no bids
           if (initialBids.length > 0) {
             const highestBid = Math.max(...initialBids.map(bid => bid.bid_amount))
             setCurrentPrice(highestBid)
+          } else if (product) {
+            // Use current_price from DB (which should be starting_price initially) if no bids
+            setCurrentPrice(product.current_price || product.starting_price)
           }
+        } else if (product) {
+          // Even if getBids fails, set the price from product data
+          setCurrentPrice(product.current_price || product.starting_price)
         }
         setError(null)
         loadedProductRef.current = productId
@@ -64,7 +77,7 @@ export function useRealtimeBids(productId: string) {
     }
 
     loadInitialData()
-  }, [productId])
+  }, [productId, supabase])
 
 
 
@@ -131,6 +144,18 @@ export function useRealtimeBids(productId: string) {
                   if (updatedBids.length > 0) {
                     const highestBid = Math.max(...updatedBids.map(bid => bid.bid_amount))
                     setCurrentPrice(highestBid)
+                  } else {
+                    // If no bids remain, reset to starting price
+                    supabase
+                      .from('Products')
+                      .select('starting_price')
+                      .eq('id', productId)
+                      .single()
+                      .then(({ data }) => {
+                        if (data) {
+                          setCurrentPrice(data.starting_price)
+                        }
+                      })
                   }
                   
                   return updatedBids
