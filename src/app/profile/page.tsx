@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { getUserProfile, getUserPurchaseHistory, getUserStats, UserProfileData, PurchaseHistoryItem } from "@/app/actions/profileActions"
 import { getUserReviews, getReviewableAuctions, getUserRating, Review, ReviewableAuction } from "@/app/actions/reviewActions"
+import { getPaymentHistory, syncAllUserPaymentsWithStripe } from "@/app/actions/paymentActions"
 import { ReviewModal } from "@/components/review-modal"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { useToast } from "@/components/ui/use-toast"
 import { 
   User, 
   Mail, 
@@ -33,6 +35,7 @@ import {
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
 
   // Real data state
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null)
@@ -46,6 +49,7 @@ export default function ProfilePage() {
   const [userRating, setUserRating] = useState({ averageRating: 0, totalReviews: 0 })
   const [userReviews, setUserReviews] = useState<Review[]>([])
   const [reviewableAuctions, setReviewableAuctions] = useState<ReviewableAuction[]>([])
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([])
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
   // Review modal state
@@ -71,13 +75,14 @@ export default function ProfilePage() {
         setIsLoadingProfile(true)
 
         // Load all data in parallel
-        const [profile, history, stats, rating, reviews, reviewable] = await Promise.all([
+        const [profile, history, stats, rating, reviews, reviewable, payments] = await Promise.all([
           getUserProfile(user.id),
           getUserPurchaseHistory(user.id),
           getUserStats(user.id),
           getUserRating(user.id),
           getUserReviews(user.id),
-          getReviewableAuctions(user.id)
+          getReviewableAuctions(user.id),
+          getPaymentHistory(user.id)
         ])
 
         console.log('📊 Profile data loaded:', {
@@ -92,6 +97,7 @@ export default function ProfilePage() {
         setUserRating(rating)
         setUserReviews(reviews)
         setReviewableAuctions(reviewable)
+        setPaymentHistory(payments)
         loadedUserRef.current = user.id
       } catch {
         // Error loading data - use fallback
@@ -103,6 +109,45 @@ export default function ProfilePage() {
 
     loadUserData()
   }, [user, isAuthenticated])
+
+  // Auto-sync payments every 30 seconds
+  useEffect(() => {
+    if (!user || !isAuthenticated) return
+
+    const autoSyncPayments = async () => {
+      try {
+        // Only sync if there are pending payments
+        const pendingPayments = paymentHistory.filter(p => p.status === 'pending' && p.stripe_intent_id && !p.stripe_intent_id.startsWith('fake_'))
+        
+        if (pendingPayments.length > 0) {
+          console.log(`🔄 Auto-syncing ${pendingPayments.length} pending payments...`)
+          
+          const result = await syncAllUserPaymentsWithStripe(user.id)
+          
+          if (result.updated > 0) {
+            // Reload payment history if any updates
+            const updatedPayments = await getPaymentHistory(user.id)
+            setPaymentHistory(updatedPayments)
+            
+            console.log(`✅ Auto-sync completed: ${result.updated} payments updated`)
+          }
+        }
+      } catch (error) {
+        console.error('❌ Auto-sync failed:', error)
+      }
+    }
+
+    // Initial sync after component loads
+    const initialDelay = setTimeout(autoSyncPayments, 2000)
+    
+    // Then sync every 30 seconds
+    const interval = setInterval(autoSyncPayments, 30000)
+
+    return () => {
+      clearTimeout(initialDelay)
+      clearInterval(interval)
+    }
+  }, [user, isAuthenticated, paymentHistory])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -176,19 +221,7 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">
             Mon Profil
           </h1>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Force refresh by clearing the loaded user ref
-                loadedUserRef.current = null
-                window.location.reload()
-              }}
-            >
-              🔄 Actualiser
-            </Button>
-          </div>
+
         </div>
 
         {/* Main Profile Card */}
@@ -348,57 +381,131 @@ export default function ProfilePage() {
           </div>
         </Card>
 
-        {/* Purchase History Card */}
+        {/* Combined Order & Payment History */}
         <Card className="border-indigo-100 shadow-sm">
           <div className="p-6">
             <div className="flex items-center space-x-3 mb-6">
               <Package className="h-5 w-5 text-indigo-600" />
-              <h3 className="text-lg font-medium text-gray-900">Historique d&apos;achat</h3>
+              <h3 className="text-lg font-medium text-gray-900">Mes enchères gagnées</h3>
             </div>
             
-            {purchaseHistory.length > 0 ? (
-                             <div className="space-y-4">
-                 {purchaseHistory.map((purchase: PurchaseHistoryItem) => (
-                  <div key={purchase.id} className="p-4 rounded-lg border border-indigo-100 hover:bg-indigo-50 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <img
-                          src={purchase.product_image || '/placeholder-image.jpg'}
-                          alt={purchase.product_title}
-                          className="w-16 h-16 rounded-lg object-cover border border-indigo-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.src = '/placeholder-image.jpg'
-                          }}
-                        />
+                         {(() => {
+               // Combine and sort all orders (payments and purchases)
+               const allOrders = [
+                 ...paymentHistory.map((payment: any) => ({
+                   id: payment.id,
+                   type: 'payment',
+                   title: payment.product?.title || 'Produit supprimé',
+                   image: payment.product?.image,
+                   amount: payment.amount,
+                   date: payment.created_at,
+                   status: payment.status,
+                   stripe_intent_id: payment.stripe_intent_id,
+                   product_id: payment.product_id || payment.product?.id,
+                   reference: payment.id.slice(0, 8)
+                 })),
+                 // Only include purchases that don't already have a payment record
+                 ...purchaseHistory.filter((purchase: PurchaseHistoryItem) => {
+                   // Check if this product already has a payment record
+                   return !paymentHistory.some((payment: any) => 
+                     (payment.product_id || payment.product?.id) === purchase.product_id
+                   )
+                 }).map((purchase: PurchaseHistoryItem) => ({
+                   id: purchase.id,
+                   type: 'purchase',
+                   title: purchase.product_title,
+                   image: purchase.product_image,
+                   amount: purchase.purchase_price,
+                   date: purchase.purchase_date,
+                   status: 'pending', // ✅ Fix: Won auctions should be pending until paid
+                   product_id: purchase.product_id,
+                   reference: purchase.id.slice(0, 8)
+                 }))
+               ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+              return allOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {allOrders.map((order: any) => (
+                    <div key={`${order.type}-${order.id}`} className="p-4 rounded-lg border border-indigo-100 hover:bg-indigo-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex-shrink-0">
+                            {order.image && (
+                              <img
+                                src={order.image || '/placeholder-image.jpg'}
+                                alt={order.title}
+                                className="w-16 h-16 rounded-lg object-cover border border-indigo-200"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement
+                                  target.src = '/placeholder-image.jpg'
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">
+                              {order.title}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {order.type === 'payment' ? 'Enchère gagnée' : 'Achat finalisé'} le {new Date(order.date).toLocaleDateString("fr-FR", {
+                                year: "numeric",
+                                month: "long", 
+                                day: "numeric"
+                              })}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Référence: {order.reference}...
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-semibold text-indigo-600">
+                            {order.amount.toLocaleString("fr-FR", {
+                              style: "currency",
+                              currency: "EUR"
+                            })}
+                          </p>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <Badge 
+                              variant={order.status === 'completed' ? 'success' : 'secondary'}
+                              className={order.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                            >
+                              {order.status === 'completed' ? 'Payé' : 'En attente'}
+                            </Badge>
+                            {order.stripe_intent_id && (
+                              <Badge variant="outline" className="text-xs">
+                                {order.stripe_intent_id.startsWith('fake_') ? 'Test' : 'Stripe'}
+                              </Badge>
+                            )}
+                            {order.status === 'pending' && (
+                              <Button
+                                size="sm"
+                                className="ml-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white"
+                                onClick={() => router.push(`/payment/${order.product_id}`)}
+                              >
+                                💳 Payer maintenant
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                                             <div className="flex-1 min-w-0">
-                         <h4 className="text-sm font-medium text-gray-900 truncate">
-                           {purchase.product_title}
-                         </h4>
-                         <p className="text-sm text-gray-600">
-                           Acheté le {new Date(purchase.purchase_date).toLocaleDateString("fr-FR")}
-                         </p>
-                         <p className="text-sm font-semibold text-indigo-600">
-                           {purchase.purchase_price.toLocaleString("fr-FR", {
-                             style: "currency",
-                             currency: "EUR"
-                           })}
-                         </p>
-                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">Aucun achat pour le moment</p>
-                <p className="text-sm text-gray-500">
-                  Vos enchères gagnées apparaîtront ici
-                </p>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Aucune enchère gagnée</h4>
+                  <p className="text-gray-600 mb-4">Commencez à enchérir pour voir vos gains ici</p>
+                  <Button 
+                    onClick={() => router.push('/auctions')}
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                  >
+                    Découvrir les enchères
+                  </Button>
+                </div>
+              )
+            })()}
           </div>
         </Card>
 
