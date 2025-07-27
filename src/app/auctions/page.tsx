@@ -5,6 +5,7 @@ import { getProducts } from "@/app/actions/productActions"
 import { AuctionsList } from "./components/AuctionsList"
 import { createClient } from "@/utils/supabase/client"
 import { RealtimeChannel } from "@supabase/supabase-js"
+import { motion } from "framer-motion"
 
 interface Auction {
   id: string
@@ -141,11 +142,23 @@ export default function AuctionsPage() {
 
   if (isLoading) {
     return (
-      <div className="container py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Chargement des enchères...</p>
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
+        <div className="container py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+            <div className="relative mb-8">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto"></div>
+                <motion.div
+                  className="absolute inset-0 rounded-full border-4 border-transparent"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                />
+              </div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                Chargement des enchères
+              </h2>
+              <p className="text-gray-600">Découvrez les meilleures offres du moment...</p>
+            </div>
           </div>
         </div>
       </div>
