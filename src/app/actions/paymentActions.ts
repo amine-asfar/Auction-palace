@@ -49,7 +49,7 @@ export async function createPaymentRecord(productId: string, winnerId: string) {
       throw paymentError
     }
 
-    console.log(`✅ Payment record created for product ${productId}, winner ${winnerId}`)
+
 
     return {
       success: true,
@@ -140,7 +140,7 @@ export async function processPayment(productId: string, deliveryFee: number = 0,
           throw updateError
         }
 
-        console.log(`✅ Stripe payment intent created: ${paymentIntent.id}`)
+
 
         return {
           success: true,
@@ -186,7 +186,7 @@ export async function processPayment(productId: string, deliveryFee: number = 0,
       .eq('id', productId)
       .single()
 
-    console.log(`✅ Test payment completed for product ${productId}`)
+    
 
     return {
       success: true,
@@ -339,7 +339,7 @@ export async function syncPaymentStatusWithStripe(paymentId: string) {
           throw updateError
         }
 
-        console.log(`✅ Payment ${paymentId} status synced: ${payment.status} → ${newStatus}`)
+  
 
         return {
           success: true,
@@ -471,12 +471,7 @@ export async function createPaymentForWinningBid(productId: string, winnerId: st
       throw paymentError
     }
 
-    console.log(`✅ Automatic payment record created for auction winner:`, {
-      productId,
-      winnerId,
-      paymentId: payment.id,
-      amount: finalPrice
-    })
+
 
     return {
       success: true,

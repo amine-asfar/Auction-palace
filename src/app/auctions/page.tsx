@@ -25,9 +25,10 @@ interface ProductUpdate {
   description?: string
   image?: string
   starting_price?: number
-  end_time?: string
+  end_time?: string // ✅ Important pour le filtrage des enchères expirées
   featured?: boolean
   bids_count?: number
+  status?: string // ✅ Ajout du statut pour le filtrage en temps réel
 }
 
 export default function AuctionsPage() {
@@ -40,6 +41,7 @@ export default function AuctionsPage() {
     const loadAuctions = async () => {
       try {
         setIsLoading(true)
+        // ✅ Récupérer seulement les enchères actives (exclut automatiquement les "completed")
         const initialAuctions = await getProducts()
         setAuctions(initialAuctions || [])
       } catch {
@@ -58,9 +60,29 @@ export default function AuctionsPage() {
 
     const setupRealtime = async () => {
       try {
-        // Subscribe to product changes (for current price updates)
+        // Subscribe to product changes (for current price updates AND new products)
         productChannel = supabase
           .channel('products-updates')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT', // ✅ Écouter les nouvelles enchères
+              schema: 'public',
+              table: 'Products'
+            },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                const newProduct = payload.new as any
+                
+                // Vérifier si la nouvelle enchère doit être affichée (pas expirée, pas completed)
+                const isActive = newProduct.status !== 'completed' && new Date(newProduct.end_time) > new Date()
+                
+                if (isActive) {
+                  setAuctions(prevAuctions => [newProduct, ...prevAuctions])
+                }
+              }
+            }
+          )
           .on(
             'postgres_changes',
             {
@@ -71,13 +93,29 @@ export default function AuctionsPage() {
             (payload) => {
               if (payload.eventType === 'UPDATE') {
                 const updatedProduct = payload.new as ProductUpdate
-                setAuctions(prevAuctions => 
-                  prevAuctions.map(auction => 
-                    auction.id === updatedProduct.id 
-                      ? { ...auction, current_price: updatedProduct.current_price }
-                      : auction
+                
+                // ✅ Si l'enchère est devenue "completed" OU si elle a expiré, la retirer de la liste
+                const isExpired = updatedProduct.end_time && new Date(updatedProduct.end_time) < new Date()
+                const isCompleted = updatedProduct.status === 'completed'
+                
+                if (isCompleted || isExpired) {
+                  setAuctions(prevAuctions => 
+                    prevAuctions.filter(auction => auction.id !== updatedProduct.id)
                   )
-                )
+                } else {
+                  // Sinon, mettre à jour le prix
+                  setAuctions(prevAuctions => 
+                    prevAuctions.map(auction => 
+                      auction.id === updatedProduct.id 
+                        ? { 
+                            ...auction, 
+                            current_price: updatedProduct.current_price,
+                            end_time: updatedProduct.end_time ? new Date(updatedProduct.end_time) : auction.end_time
+                          }
+                        : auction
+                    )
+                  )
+                }
               }
             }
           )

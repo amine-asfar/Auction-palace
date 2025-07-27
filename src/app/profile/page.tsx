@@ -85,11 +85,7 @@ export default function ProfilePage() {
           getPaymentHistory(user.id)
         ])
 
-        console.log('📊 Profile data loaded:', {
-          reviewableAuctions: reviewable,
-          reviewableCount: reviewable.length,
-          canReviewCount: reviewable.filter(a => a.can_review).length
-        })
+
 
         if (profile) setUserProfile(profile)
         setPurchaseHistory(history)
@@ -129,7 +125,7 @@ export default function ProfilePage() {
             const updatedPayments = await getPaymentHistory(user.id)
             setPaymentHistory(updatedPayments)
             
-            console.log(`✅ Auto-sync completed: ${result.updated} payments updated`)
+    
           }
         }
       } catch (error) {

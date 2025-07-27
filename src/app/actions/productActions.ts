@@ -29,11 +29,17 @@ export async function getProducts(filters: ProductFilters = {}) {
     .from("Products")
     .select("*")
   
+  // ✅ Par défaut, exclure les enchères terminées (statut completed OU date expirée)
+  if (!filters.status) {
+    query = query
+      .neq("status", "completed")
+      .gt("end_time", new Date().toISOString()) // ✅ Exclure les enchères expirées
+  } else {
+    query = query.eq("status", filters.status)
+  }
+  
   if (filters.category_id) {
     query = query.eq("category_id", filters.category_id)
-  }
-  if (filters.status) {
-    query = query.eq("status", filters.status)
   }
   if (filters.priceMin !== undefined) {
     query = query.gte("current_price", filters.priceMin)

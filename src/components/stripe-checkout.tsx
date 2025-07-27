@@ -70,10 +70,8 @@ function CheckoutForm({ clientSecret, amount, onSuccess, onError }: StripeChecko
             }),
           })
           
-          if (response.ok) {
-            console.log('✅ Backend notified of successful payment')
-          } else {
-            console.warn('⚠️ Failed to notify backend, but payment succeeded')
+          if (!response.ok) {
+            console.warn('Failed to notify backend, but payment succeeded')
           }
         } catch (notifyError) {
           console.warn('⚠️ Backend notification failed:', notifyError)
