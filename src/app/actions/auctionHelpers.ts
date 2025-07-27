@@ -97,14 +97,12 @@ export async function processAuctionEnd(productId: string): Promise<void> {
       .single()
 
     if (productError || !product) {
-      console.log(`❌ Product not found: ${productId}`)
       return
     }
 
     // Check if auction has actually ended
     const isEnded = new Date(product.end_time) < new Date() || product.status === 'completed'
     if (!isEnded) {
-      console.log(`ℹ️ Auction ${productId} has not ended yet`)
       return
     }
 
@@ -119,7 +117,6 @@ export async function processAuctionEnd(productId: string): Promise<void> {
       .single()
 
     if (bidError || !winningBid) {
-      console.log(`ℹ️ No winning bid found for auction ${productId}`)
       return
     }
 
@@ -132,7 +129,6 @@ export async function processAuctionEnd(productId: string): Promise<void> {
       .single()
 
     if (existingPayment) {
-      console.log(`ℹ️ Payment record already exists for auction ${productId}`)
       return
     }
 
@@ -152,11 +148,9 @@ export async function processAuctionEnd(productId: string): Promise<void> {
       .single()
 
     if (paymentError) {
-      console.error(`❌ Failed to create payment record for auction ${productId}:`, paymentError)
+      console.error(`Failed to create payment record for auction ${productId}:`, paymentError)
       return
     }
-
-    console.log(`✅ Payment record created for auction ${productId}, winner ${winningBid.user_id}, amount ${winningBid.bid_amount}`)
 
   } catch (error) {
     console.error(`❌ Error processing auction end for ${productId}:`, error)

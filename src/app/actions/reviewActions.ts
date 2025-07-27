@@ -94,13 +94,9 @@ export async function getUserReviews(userId: string): Promise<Review[]> {
       .eq('seller_id', userId)
       .order('created_at', { ascending: false })
 
-    console.log('🔍 Raw reviews for user:', reviews)
-    console.log('🔍 Reviews error:', error)
-
     if (error) throw error
 
     if (!reviews || reviews.length === 0) {
-      console.log('❌ No reviews found for user:', userId)
       return []
     }
 
@@ -176,11 +172,7 @@ export async function getReviewableAuctions(userId: string): Promise<ReviewableA
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
-    console.log('🔍 wonAuctions raw data:', wonAuctions)
-    console.log('🔍 wonAuctions error:', error)
-
     if (error || !wonAuctions) {
-      console.log('❌ No wonAuctions or error:', error)
       return []
     }
 
@@ -202,19 +194,7 @@ export async function getReviewableAuctions(userId: string): Promise<ReviewableA
       const auctionEnded = new Date(product.end_time) < new Date() || product.status === 'completed'
       const isWinningBid = bid.bid_amount === product.current_price
       
-      console.log(`🔍 AUCTION CHECK: ${product.title}`, {
-        endTime: product.end_time,
-        now: new Date().toISOString(),
-        status: product.status,
-        auctionEnded,
-        userBid: bid.bid_amount,
-        currentPrice: product.current_price,
-        isWinningBid,
-        sellerId: product.user_id
-      })
-      
       if (auctionEnded && isWinningBid) {
-        console.log(`✅ WINNER: ${product.title} - Adding to reviewable auctions`);
         
         // Get seller information from UserProfiles table
         const { data: sellerProfile } = await (await supabase)

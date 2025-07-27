@@ -6,7 +6,6 @@ import type { CookieOptions } from '@supabase/ssr'
 
 // Routes qui nécessitent une authentification
 const protectedRoutes = [
-  '/',
   '/profile',
   '/sell',
   '/payment',

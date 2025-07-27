@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Clock, Search, Filter, ChevronDown, Heart } from "lucide-react"
+import { Clock, Search, Filter, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -34,6 +34,7 @@ interface Auction {
   end_time: Date
   featured?: boolean
   bids_count?: number
+  bidders_count?: number
 }
 
 interface AuctionsListProps {
@@ -117,19 +118,20 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
   }
 
   return (
-    <div className="container py-8">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
+      <div className="container py-8">
       {/* Breadcrumb */}
       <div className="flex items-center mb-8 text-sm">
-        <Link href="/" className="text-gray-600 hover:text-indigo-600 transition-colors">
+        <Link href="/" className="text-gray-600 hover:text-violet-600 transition-colors">
           Accueil
         </Link>
         <span className="mx-2 text-gray-400">/</span>
-        <span className="text-indigo-600 font-medium">Enchères</span>
+        <span className="text-violet-600 font-medium">Enchères</span>
       </div>
 
       {/* Hero Section */}
       <div className="mb-10 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent mb-4">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-4">
           Découvrez des Enchères Uniques
         </h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
@@ -144,7 +146,7 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
           <Input
             type="text"
             placeholder="Rechercher une enchère..."
-            className="pl-10 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300"
+            className="pl-10 border-violet-200 focus:border-violet-500 focus:ring-violet-300"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -153,27 +155,27 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
         <div className="flex gap-2 w-full md:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="border-indigo-200 hover:bg-indigo-50 text-gray-700">
-                <Filter className="h-4 w-4 mr-2 text-indigo-500" />
+              <Button variant="outline" className="border-violet-200 hover:bg-violet-50 text-gray-700">
+                <Filter className="h-4 w-4 mr-2 text-violet-500" />
                 Filtrer
-                <ChevronDown className="h-4 w-4 ml-2 text-indigo-500" />
+                <ChevronDown className="h-4 w-4 ml-2 text-violet-500" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="border-indigo-100">
-              <DropdownMenuItem onClick={() => setCategory("all")} className="hover:bg-indigo-50 cursor-pointer">
+            <DropdownMenuContent className="border-violet-100">
+              <DropdownMenuItem onClick={() => setCategory("all")} className="hover:bg-violet-50 cursor-pointer">
                 Toutes les enchères
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCategory("featured")} className="hover:bg-indigo-50 cursor-pointer">
+              <DropdownMenuItem onClick={() => setCategory("featured")} className="hover:bg-violet-50 cursor-pointer">
                 Enchères en vedette
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
           <Select value={sortOption} onValueChange={(value) => setSortOption(value)}>
-            <SelectTrigger className="w-[180px] border-indigo-200 hover:bg-indigo-50 text-gray-700">
+            <SelectTrigger className="w-[180px] border-violet-200 hover:bg-violet-50 text-gray-700">
               <SelectValue placeholder="Trier par" />
             </SelectTrigger>
-            <SelectContent className="border-indigo-100">
+            <SelectContent className="border-violet-100">
               <SelectItem value="ending-soon">Se termine bientôt</SelectItem>
               <SelectItem value="price-high">Prix ↓</SelectItem>
               <SelectItem value="price-low">Prix ↑</SelectItem>
@@ -186,16 +188,16 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
       {/* Onglets */}
       <Tabs defaultValue="grid" className="mb-6">
         <div className="flex justify-end">
-          <TabsList className="bg-indigo-50 p-1">
+          <TabsList className="bg-violet-50 p-1">
             <TabsTrigger 
               value="grid" 
-              className="data-[state=active]:bg-white data-[state=active]:text-indigo-700"
+              className="data-[state=active]:bg-white data-[state=active]:text-violet-700"
             >
               Grille
             </TabsTrigger>
             <TabsTrigger 
               value="list"
-              className="data-[state=active]:bg-white data-[state=active]:text-indigo-700"
+              className="data-[state=active]:bg-white data-[state=active]:text-violet-700"
             >
               Liste
             </TabsTrigger>
@@ -214,7 +216,7 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
                 variants={cardVariants}
               >
                 <Link href={`/auctions/${auction.id}`}>
-                  <Card className="overflow-hidden group h-full border-indigo-100 hover:border-indigo-300 transition-all duration-300 hover:shadow-md hover:-translate-y-1 rounded-xl">
+                  <Card className="overflow-hidden group h-full border-violet-100 hover:border-violet-300 transition-all duration-300 hover:shadow-xl hover:-translate-y-2 rounded-xl bg-white/80 backdrop-blur-sm">
                     <div className="relative aspect-square">
                       <Image
                         src={auction.image}
@@ -222,32 +224,35 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-                        <p className="text-white font-medium text-sm flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {formatTimeLeft(new Date(auction.end_time))}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-4">
+                        <p className="font-medium text-sm flex items-center gap-1 text-white">
+                          <Clock className="h-4 w-4" /> {formatTimeLeft(new Date(auction.end_time))}
                         </p>
                       </div>
-                      <button className="absolute top-3 right-3 bg-white/80 p-1.5 rounded-full hover:bg-white/95 transition-colors">
-                        <Heart className="h-4 w-4 text-rose-500" />
-                      </button>
                       {auction.featured && (
-                        <div className="absolute top-3 left-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-2 py-1 rounded-md text-white text-xs font-semibold">
-                          En vedette
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-violet-600 to-purple-600 px-3 py-1 rounded-full text-white text-xs font-semibold shadow-lg">
+                          ⭐ En vedette
                         </div>
                       )}
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-800 line-clamp-1 group-hover:text-indigo-700 transition-colors">
+                    <div className="p-5">
+                      <h3 className="font-semibold text-gray-800 line-clamp-1 group-hover:text-violet-700 transition-colors mb-2">
                         {auction.title}
                       </h3>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{auction.description}</p>
-                      <div className="mt-3 flex justify-between items-center">
-                        <div>
-                          <p className="text-xs text-indigo-600 font-medium">Enchère actuelle</p>
-                          <p className="text-lg font-bold text-gray-900">{formatCurrency(auction.current_price)}</p>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {auction.bids_count || 0} enchère{(auction.bids_count || 0) > 1 ? 's' : ''}
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2 mb-4">{auction.description}</p>
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-xs text-violet-600 font-medium">Enchère actuelle</p>
+                            <p className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                              {formatCurrency(auction.current_price)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">Prix de départ</p>
+                            <p className="text-sm font-medium text-gray-600">{formatCurrency(auction.starting_price)}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -270,7 +275,7 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
                 variants={cardVariants}
               >
                 <Link href={`/auctions/${auction.id}`}>
-                  <Card className="overflow-hidden group border-indigo-100 hover:border-indigo-300 transition-all duration-300 hover:shadow-md rounded-xl">
+                  <Card className="overflow-hidden group border-violet-100 hover:border-violet-300 transition-all duration-300 hover:shadow-xl rounded-xl bg-white/80 backdrop-blur-sm">
                     <div className="flex flex-col md:flex-row">
                       <div className="relative h-48 md:h-auto md:w-48 lg:w-64">
                         <Image
@@ -280,35 +285,39 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         {auction.featured && (
-                          <div className="absolute top-3 left-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-2 py-1 rounded-md text-white text-xs font-semibold">
-                            En vedette
+                          <div className="absolute top-3 left-3 bg-gradient-to-r from-violet-600 to-purple-600 px-3 py-1 rounded-full text-white text-xs font-semibold shadow-lg">
+                            ⭐ En vedette
                           </div>
                         )}
+
                       </div>
-                      <div className="p-4 flex-1 flex flex-col justify-between">
+                      <div className="p-6 flex-1 flex flex-col justify-between">
                         <div>
-                          <div className="flex justify-between items-start">
-                            <h3 className="font-semibold text-gray-800 group-hover:text-indigo-700 transition-colors">
-                              {auction.title}
-                            </h3>
-                            <button className="bg-white p-1 rounded-full hover:bg-indigo-50 transition-colors">
-                              <Heart className="h-4 w-4 text-rose-500" />
-                            </button>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">{auction.description}</p>
+                          <h3 className="font-semibold text-gray-800 group-hover:text-violet-700 transition-colors text-lg mb-2">
+                            {auction.title}
+                          </h3>
+                          <p className="text-sm text-gray-500 line-clamp-2">{auction.description}</p>
                         </div>
-                        <div className="mt-4 flex justify-between items-center">
-                          <div>
-                            <p className="text-xs text-indigo-600 font-medium">Enchère actuelle</p>
-                            <p className="text-xl font-bold text-gray-900">{formatCurrency(auction.current_price)}</p>
+                        <div className="mt-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-xs text-violet-600 font-medium">Enchère actuelle</p>
+                              <p className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                                {formatCurrency(auction.current_price)}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium flex items-center gap-1 text-violet-600">
+                                <Clock className="h-4 w-4" /> {formatTimeLeft(new Date(auction.end_time))}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">Prix de départ: {formatCurrency(auction.starting_price)}</p>
+                            </div>
                           </div>
-                          <div className="flex flex-col items-end">
-                            <p className="text-sm font-medium flex items-center gap-1 text-indigo-600">
-                              <Clock className="h-3 w-3" /> {formatTimeLeft(new Date(auction.end_time))}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {auction.bids_count || 0} enchère{(auction.bids_count || 0) > 1 ? 's' : ''}
-                            </p>
+                          
+                          <div className="flex items-center justify-between pt-3 border-t border-violet-100">
+                            <div className="text-sm text-gray-500">
+                              <span className="font-medium">{auction.bids_count || 0} enchères</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -320,6 +329,7 @@ export function AuctionsList({ initialAuctions }: AuctionsListProps) {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 } 

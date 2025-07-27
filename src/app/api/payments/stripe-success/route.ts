@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update payment' }, { status: 500 })
     }
 
-    console.log(`✅ Payment ${payment.id} marked as completed for Stripe intent ${paymentIntentId}`)
+
 
     return NextResponse.json({ 
       success: true, 
