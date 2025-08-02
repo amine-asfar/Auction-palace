@@ -4,7 +4,24 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: false, // Disable React Strict Mode to prevent double mounting in development
   images: {
-    domains: ["images.unsplash.com","images.pexels.com","plus.unsplash.com"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.istockphoto.com',
+      },
+    ],
   },
 };
 

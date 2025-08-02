@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/hooks/use-auth"
 import { useRealtimeBids, RealtimeBid } from "@/hooks/use-realtime-bids"
 import { cn } from "@/lib/utils"
-import { Clock, Heart, Share2, Zap, TrendingUp, User, Calendar, Trophy, Eye, Gavel } from "lucide-react"
+import { Clock, Zap, TrendingUp, User, Trophy, Gavel } from "lucide-react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
@@ -208,12 +207,36 @@ export default function AuctionDetailPage() {
   }
 
   const getUserName = (bid: RealtimeBid): string => {
+    // Show "Vous" if it's the current user's bid
+    if (user && bid.user_id === user.id) {
+      return "Vous"
+    }
+    
     if (bid.UserProfiles && bid.UserProfiles.length > 0) {
       const profile = bid.UserProfiles[0]
-      const name = profile.name || ''
-      const familyName = profile.family_name || ''
+      const name = profile.name?.trim() || ''
+      const familyName = profile.family_name?.trim() || ''
       
+      // Enhanced debugging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Profile data:', { 
+          name, 
+          familyName, 
+          fullName: `${name} ${familyName}`,
+          user_id: bid.user_id 
+        })
+      }
+      
+      // Check if the name and family_name are the same (duplicate data)
       if (name && familyName) {
+        // If name and family_name are identical, only return one
+        if (name.toLowerCase() === familyName.toLowerCase()) {
+          return name
+        }
+        // Check if one already contains the other
+        if (name.includes(familyName) || familyName.includes(name)) {
+          return name.length >= familyName.length ? name : familyName
+        }
         return `${name} ${familyName}`
       } else if (name) {
         return name
@@ -222,8 +245,9 @@ export default function AuctionDetailPage() {
       }
     }
     
-    // Fallback to shortened user ID with better formatting
-    return `Utilisateur ${bid.user_id.substring(0, 8)}`
+    // Enhanced fallback with anonymized display
+    const shortId = bid.user_id.substring(0, 8)
+    return `Enchérisseur ${shortId}`
   }
 
   const updateTimeLeft = () => {
@@ -370,9 +394,9 @@ export default function AuctionDetailPage() {
                 />
               </div>
               <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                Chargement de l'enchère
+                Chargement de l&apos;enchère
               </h2>
-              <p className="text-gray-600">Préparation de l'expérience en temps réel...</p>
+              <p className="text-gray-600">Préparation de l&apos;expérience en temps réel...</p>
             </motion.div>
           </div>
         </div>
@@ -393,7 +417,7 @@ export default function AuctionDetailPage() {
               <Gavel className="h-10 w-10 text-red-600" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Enchère introuvable</h2>
-            <p className="text-gray-600 mb-6">Cette enchère n'existe pas ou a été supprimée.</p>
+            <p className="text-gray-600 mb-6">Cette enchère n&apos;existe pas ou a été supprimée.</p>
             <Button 
               onClick={() => router.push('/auctions')} 
               className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
@@ -815,7 +839,7 @@ export default function AuctionDetailPage() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                       <Gavel className="h-5 w-5 text-violet-600" />
-                      Détails de l'enchère
+                      Détails de l&apos;enchère
                     </h3>
                     <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border border-gray-200">
                       <dl className="space-y-3">

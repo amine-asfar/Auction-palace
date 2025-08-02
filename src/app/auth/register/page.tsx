@@ -105,27 +105,29 @@ export default function RegisterPage() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-700">Prénom</Label>
+              <Label htmlFor="name" className="text-gray-700">Prénom *</Label>
               <Input
                 id="name"
                 name="name"
                 type="text"
-                placeholder="John"
+                placeholder="Oussama (prénom uniquement)"
                 className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300 h-12"
               />
+              <p className="text-xs text-gray-500">Entrez seulement votre prénom, pas votre nom complet</p>
               {state.errors?.name && (
                 <p className="text-sm text-destructive">{state.errors.name[0]}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="family_name" className="text-gray-700">Nom de famille</Label>
+              <Label htmlFor="family_name" className="text-gray-700">Nom de famille *</Label>
               <Input
                 id="family_name"
                 name="family_name"
                 type="text"
-                placeholder="Doe"
+                placeholder="Fatnassi (nom de famille uniquement)"
                 className="border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300 h-12"
               />
+              <p className="text-xs text-gray-500">Entrez seulement votre nom de famille</p>
               {state.errors?.family_name && (
                 <p className="text-sm text-destructive">{state.errors.family_name[0]}</p>
               )}

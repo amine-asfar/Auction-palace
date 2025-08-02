@@ -17,8 +17,30 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   email: z.string().email("Veuillez entrer un email valide"),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
-  name: z.string().optional(),
-  family_name: z.string().optional(),
+  name: z.string()
+    .min(1, "Le prénom est requis")
+    .refine(
+      (name) => {
+        const words = name.trim().split(' ')
+        if (words.length > 2) {
+          return false
+        }
+        return true
+      },
+      "Entrez seulement votre prénom, pas votre nom complet"
+    ),
+  family_name: z.string()
+    .min(1, "Le nom de famille est requis")
+    .refine(
+      (familyName) => {
+        const words = familyName.trim().split(' ')
+        if (words.length > 3) {
+          return false
+        }
+        return true
+      },
+      "Le nom de famille ne peut contenir plus de 3 mots"
+    ),
   phone: z.string().optional(),
   address: z.string().optional(),
   billing_file: z.instanceof(File).optional(),
@@ -206,12 +228,48 @@ export async function register(prevState: RegisterFormState, formData: FormData)
       }
     }
 
+    // Traitement intelligent des noms pour éviter les doublons
+    let processedName = name || 'Utilisateur'
+    let processedFamilyName = family_name || 'Anonyme'
+    
+    // Si le nom contient plusieurs mots et que family_name est vide/similaire
+    if (processedName && processedName.trim().includes(' ')) {
+      const nameParts = processedName.trim().split(' ')
+      if (nameParts.length >= 2) {
+        // Si family_name est vide ou identique au name, ou contient le même texte
+        if (!family_name || 
+            family_name.trim() === '' || 
+            (name && family_name.toLowerCase() === name.toLowerCase()) ||
+            (name && name.toLowerCase().includes(family_name.toLowerCase())) ||
+            (name && family_name.toLowerCase().includes(name.toLowerCase()))) {
+          
+          // Diviser intelligemment le nom complet
+          processedName = nameParts[0] // Premier mot = prénom
+          processedFamilyName = nameParts.slice(1).join(' ') // Reste = nom de famille
+          
+          console.log(`Nom intelligent divisé: "${name || 'undefined'}" -> prénom: "${processedName}", nom: "${processedFamilyName}"`)
+        }
+      }
+    }
+    
+    // Vérification de sécurité pour éviter les doublons
+    if (processedName.toLowerCase() === processedFamilyName.toLowerCase()) {
+      // Si même après traitement ils sont identiques, utiliser seulement le premier mot
+      const words = processedName.trim().split(' ')
+      if (words.length >= 2) {
+        processedName = words[0]
+        processedFamilyName = words.slice(1).join(' ')
+      } else {
+        processedFamilyName = 'Anonyme' // Fallback si on ne peut pas séparer
+      }
+    }
+
     // Créer le profil utilisateur avec les informations supplémentaires
     try {
       await createUserProfile({
         user_id: data.user.id,
-        name: name || 'Utilisateur',
-        family_name: family_name || 'Anonyme',
+        name: processedName,
+        family_name: processedFamilyName,
         phone: phone || undefined,
         address: address || undefined,
         billing_info: billing_file_url || 'Aucun fichier fourni',
