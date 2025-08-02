@@ -30,11 +30,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="fr">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased ${inter.className}`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased ${inter.className}`}
+      >
         <AuthProvider>
           <Theme>
             <div className="relative flex min-h-screen flex-col">

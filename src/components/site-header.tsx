@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { MainNav } from "@/components/main-nav"
-import { UserNav } from "@/components/user-nav"
+import { MainNav } from "@/components/main-nav";
+import { UserNav } from "@/components/user-nav";
 
 export function SiteHeader() {
   return (
@@ -13,5 +13,5 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
-  )
-} 
+  );
+}

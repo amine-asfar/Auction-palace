@@ -1,19 +1,18 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { 
-  Gavel, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Facebook, 
-  Twitter, 
-  Instagram, 
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+  Gavel,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
+  Instagram,
   Linkedin,
-  Heart
-} from "lucide-react"
+} from "lucide-react";
 
 export function SiteFooter() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -28,19 +27,32 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="text-gray-300 mb-6">
-              La plateforme d'enchères moderne pour découvrir des objets uniques et participer à des enchères passionnantes.
+              La plateforme d&apos;enchères moderne pour découvrir des objets uniques
+              et participer à des enchères passionnantes.
             </p>
             <div className="flex space-x-4">
-              <Link href="#" className="text-gray-400 hover:text-violet-400 transition-colors">
+              <Link
+                href="#"
+                className="text-gray-400 hover:text-violet-400 transition-colors"
+              >
                 <Facebook className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-violet-400 transition-colors">
+              <Link
+                href="#"
+                className="text-gray-400 hover:text-violet-400 transition-colors"
+              >
                 <Twitter className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-violet-400 transition-colors">
+              <Link
+                href="#"
+                className="text-gray-400 hover:text-violet-400 transition-colors"
+              >
                 <Instagram className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-400 hover:text-violet-400 transition-colors">
+              <Link
+                href="#"
+                className="text-gray-400 hover:text-violet-400 transition-colors"
+              >
                 <Linkedin className="h-5 w-5" />
               </Link>
             </div>
@@ -51,22 +63,34 @@ export function SiteFooter() {
             <h3 className="text-lg font-semibold mb-4">Liens Rapides</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/auctions" className="text-gray-300 hover:text-violet-400 transition-colors">
+                <Link
+                  href="/auctions"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
                   Enchères
                 </Link>
               </li>
               <li>
-                <Link href="/create-auction" className="text-gray-300 hover:text-violet-400 transition-colors">
+                <Link
+                  href="/create-auction"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
                   Créer une Enchère
                 </Link>
               </li>
               <li>
-                <Link href="/profile" className="text-gray-300 hover:text-violet-400 transition-colors">
+                <Link
+                  href="/profile"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
                   Mon Profil
                 </Link>
               </li>
               <li>
-                <Link href="/auth/login" className="text-gray-300 hover:text-violet-400 transition-colors">
+                <Link
+                  href="/auth/login"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
                   Connexion
                 </Link>
               </li>
@@ -78,22 +102,34 @@ export function SiteFooter() {
             <h3 className="text-lg font-semibold mb-4">Support</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/help" className="text-gray-300 hover:text-violet-400 transition-colors">
-                  Centre d'Aide
+                <Link
+                  href="/help"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
+                  Centre d&apos;Aide
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-violet-400 transition-colors">
+                <Link
+                  href="/contact"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="/terms" className="text-gray-300 hover:text-violet-400 transition-colors">
-                  Conditions d'Utilisation
+                <Link
+                  href="/terms"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
+                  Conditions d&apos;Utilisation
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-gray-300 hover:text-violet-400 transition-colors">
+                <Link
+                  href="/privacy"
+                  className="text-gray-300 hover:text-violet-400 transition-colors"
+                >
                   Politique de Confidentialité
                 </Link>
               </li>
@@ -125,7 +161,9 @@ export function SiteFooter() {
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">
               <h3 className="text-lg font-semibold mb-2">Newsletter</h3>
-              <p className="text-gray-300">Restez informé des nouvelles enchères</p>
+              <p className="text-gray-300">
+                Restez informé des nouvelles enchères
+              </p>
             </div>
             <div className="flex w-full md:w-auto">
               <input
@@ -134,7 +172,7 @@ export function SiteFooter() {
                 className="flex-1 md:w-64 px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-lg text-white placeholder-gray-400 focus:outline-none focus:border-violet-400"
               />
               <Button className="bg-violet-600 hover:bg-violet-700 rounded-l-none">
-                S'abonner
+                S&apos;abonner
               </Button>
             </div>
           </div>
@@ -145,9 +183,8 @@ export function SiteFooter() {
           <p className="text-gray-400 text-sm">
             © {currentYear} Auction Palace. Tous droits réservés.
           </p>
-          
         </div>
       </div>
     </footer>
-  )
-} 
+  );
+}

@@ -1,70 +1,85 @@
-"use client"
+"use client";
 
-import { useAuth } from "@/hooks/use-auth"
-import { useVerification } from "@/hooks/use-verification"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { VerificationUpload } from "@/components/verification-upload"
-import { useToast } from "@/components/ui/use-toast"
-import { Shield, AlertTriangle, CheckCircle, Clock, XCircle } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth";
+import { useVerification } from "@/hooks/use-verification";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { VerificationUpload } from "@/components/verification-upload";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+} from "lucide-react";
 
 export default function VerificationRequiredPage() {
-  const { user, isAuthenticated, isLoading } = useAuth()
-  const { verificationStatus, isVerified, needsVerification, isLoadingVerification } = useVerification()
-  const router = useRouter()
-  const { toast } = useToast()
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const {
+    verificationStatus,
+    isVerified,
+    needsVerification,
+    isLoadingVerification,
+  } = useVerification();
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login?redirectTo=/verification-required")
-      return
+      router.push("/auth/login?redirectTo=/verification-required");
+      return;
     }
 
     if (!isLoadingVerification && isVerified) {
-      router.push("/")
-      return
+      router.push("/");
+      return;
     }
-  }, [isAuthenticated, isLoading, isVerified, isLoadingVerification, router])
+  }, [isAuthenticated, isLoading, isVerified, isLoadingVerification, router]);
 
   const handleVerificationSubmitted = () => {
     toast({
       title: "Vérification soumise",
-      description: "Votre document a été soumis avec succès. Vous recevrez une notification une fois vérifié.",
-    })
-  }
+      description:
+        "Votre document a été soumis avec succès. Vous recevrez une notification une fois vérifié.",
+    });
+  };
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return {
-          label: 'Vérification approuvée',
+          label: "Vérification approuvée",
           icon: CheckCircle,
-          color: 'text-green-600',
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200',
-          message: 'Votre identité a été vérifiée avec succès. Vous pouvez maintenant accéder au site.'
-        }
-      case 'rejected':
+          color: "text-green-600",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-200",
+          message:
+            "Votre identité a été vérifiée avec succès. Vous pouvez maintenant accéder au site.",
+        };
+      case "rejected":
         return {
-          label: 'Vérification rejetée',
+          label: "Vérification rejetée",
           icon: XCircle,
-          color: 'text-red-600',
-          bgColor: 'bg-red-50',
-          borderColor: 'border-red-200',
-          message: 'Votre document a été rejeté. Veuillez soumettre un nouveau document.'
-        }
+          color: "text-red-600",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-200",
+          message:
+            "Votre document a été rejeté. Veuillez soumettre un nouveau document.",
+        };
       default:
         return {
-          label: 'Vérification en cours',
+          label: "Vérification en cours",
           icon: Clock,
-          color: 'text-orange-600',
-          bgColor: 'bg-orange-50',
-          borderColor: 'border-orange-200',
-          message: 'Votre document est en cours de vérification. Cela peut prendre 24-48 heures.'
-        }
+          color: "text-orange-600",
+          bgColor: "bg-orange-50",
+          borderColor: "border-orange-200",
+          message:
+            "Votre document est en cours de vérification. Cela peut prendre 24-48 heures.",
+        };
     }
-  }
+  };
 
   if (isLoading || isLoadingVerification) {
     return (
@@ -82,15 +97,15 @@ export default function VerificationRequiredPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (!isAuthenticated || !user) {
-    return null
+    return null;
   }
 
   if (isVerified) {
-    return null // Will redirect to home
+    return null;
   }
 
   return (
@@ -115,11 +130,15 @@ export default function VerificationRequiredPage() {
         {verificationStatus && (
           <Card className="p-6">
             {(() => {
-              const statusConfig = getStatusConfig(verificationStatus)
-              const StatusIcon = statusConfig.icon
+              const statusConfig = getStatusConfig(verificationStatus);
+              const StatusIcon = statusConfig.icon;
               return (
-                <div className={`flex items-start space-x-4 p-4 rounded-lg border ${statusConfig.bgColor} ${statusConfig.borderColor}`}>
-                  <StatusIcon className={`h-6 w-6 ${statusConfig.color} mt-0.5`} />
+                <div
+                  className={`flex items-start space-x-4 p-4 rounded-lg border ${statusConfig.bgColor} ${statusConfig.borderColor}`}
+                >
+                  <StatusIcon
+                    className={`h-6 w-6 ${statusConfig.color} mt-0.5`}
+                  />
                   <div>
                     <h3 className={`font-medium ${statusConfig.color}`}>
                       {statusConfig.label}
@@ -129,14 +148,14 @@ export default function VerificationRequiredPage() {
                     </p>
                   </div>
                 </div>
-              )
+              );
             })()}
           </Card>
         )}
 
         {/* Verification Upload */}
         {needsVerification && (
-          <VerificationUpload 
+          <VerificationUpload
             onVerificationSubmitted={handleVerificationSubmitted}
             isRequired={true}
           />
@@ -162,7 +181,9 @@ export default function VerificationRequiredPage() {
 
         {/* Help Card */}
         <Card className="p-6">
-          <h3 className="font-medium text-gray-900 mb-3">Besoin d&apos;aide ?</h3>
+          <h3 className="font-medium text-gray-900 mb-3">
+            Besoin d&apos;aide ?
+          </h3>
           <div className="text-sm text-gray-600 space-y-2">
             <p>• Assurez-vous que votre document est lisible et complet</p>
             <p>• Les formats acceptés : PDF, JPG, JPEG, PNG</p>
@@ -172,5 +193,5 @@ export default function VerificationRequiredPage() {
         </Card>
       </div>
     </div>
-  )
-} 
+  );
+}

@@ -1,92 +1,95 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { motion } from "framer-motion"
-import { 
-  Gavel, 
-  TrendingUp, 
-  Shield, 
-  Clock, 
-  Users, 
-  Zap, 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+import {
+  Gavel,
+  TrendingUp,
+  Shield,
+  Clock,
+  Users,
+  Zap,
   Star,
   ArrowRight,
   CheckCircle,
-  Play
-} from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { useAuth } from "@/hooks/use-auth"
+  Play,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
-  const { user } = useAuth()
-  
+  const { user } = useAuth();
+
   const features = [
     {
       icon: <Gavel className="h-6 w-6" />,
       title: "Enchères en Temps Réel",
-      description: "Participez à des enchères live avec des mises à jour instantanées"
+      description:
+        "Participez à des enchères live avec des mises à jour instantanées",
     },
     {
       icon: <Shield className="h-6 w-6" />,
       title: "Paiements Sécurisés",
-      description: "Transactions protégées avec Stripe et authentification robuste"
+      description:
+        "Transactions protégées avec Stripe et authentification robuste",
     },
     {
       icon: <TrendingUp className="h-6 w-6" />,
       title: "Prix Concurrentiels",
-      description: "Obtenez les meilleurs prix grâce à notre système d'enchères transparent"
+      description:
+        "Obtenez les meilleurs prix grâce à notre système d'enchères transparent",
     },
     {
       icon: <Clock className="h-6 w-6" />,
       title: "Expiration Automatique",
-      description: "Les enchères se terminent automatiquement à l'heure prévue"
+      description: "Les enchères se terminent automatiquement à l'heure prévue",
     },
     {
       icon: <Users className="h-6 w-6" />,
       title: "Communauté Active",
-      description: "Rejoignez une communauté d'enchérisseurs passionnés"
+      description: "Rejoignez une communauté d'enchérisseurs passionnés",
     },
     {
       icon: <Zap className="h-6 w-6" />,
       title: "Interface Moderne",
-      description: "Design épuré et responsive pour une expérience optimale"
-    }
-  ]
+      description: "Design épuré et responsive pour une expérience optimale",
+    },
+  ];
 
   const stats = [
     { number: "500+", label: "Enchères Actives" },
     { number: "10K+", label: "Utilisateurs" },
     { number: "€2M+", label: "Volume Total" },
-    { number: "99%", label: "Satisfaction" }
-  ]
+    { number: "99%", label: "Satisfaction" },
+  ];
 
   const testimonials = [
     {
       name: "Marie Dubois",
       role: "Collectionneuse",
-      text: "Auction Palace m'a permis de trouver des pièces uniques que je n'aurais jamais découvertes ailleurs."
+      text: "Auction Palace m'a permis de trouver des pièces uniques que je n'aurais jamais découvertes ailleurs.",
     },
     {
       name: "Jean Martin",
       role: "Expert en Art",
-      text: "La plateforme est intuitive et les enchères sont transparentes. Je recommande vivement !"
+      text: "La plateforme est intuitive et les enchères sont transparentes. Je recommande vivement !",
     },
     {
       name: "Sophie Laurent",
       role: "Antiquaire",
-      text: "Une expérience d'enchères moderne et sécurisée. Parfait pour les professionnels."
-    }
-  ]
+      text: "Une expérience d'enchères moderne et sécurisée. Parfait pour les professionnels.",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-purple-50">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-violet-600/10 to-purple-600/10 pointer-events-none"></div>
-        
+
         {/* Background Images */}
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute top-20 left-10 w-32 h-32 bg-violet-400 rounded-full blur-3xl"></div>
@@ -107,27 +110,35 @@ export default function Home() {
                   <Star className="h-3 w-3 mr-1" />
                   Plateforme d'enchères premium
                 </Badge>
-                
+
                 <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent mb-6">
                   Auction Palace
                 </h1>
-                
+
                 <p className="text-xl md:text-2xl text-gray-600 mb-8">
-                  Découvrez des objets uniques et participez à des enchères passionnantes. 
-                  Une expérience moderne et sécurisée pour tous les collectionneurs.
+                  Découvrez des objets uniques et participez à des enchères
+                  passionnantes. Une expérience moderne et sécurisée pour tous
+                  les collectionneurs.
                 </p>
               </motion.div>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
                 <Link href="/auctions" className="inline-block">
-                  <Button size="lg" className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-8 py-4 text-lg group">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-8 py-4 text-lg group"
+                  >
                     Découvrir les Enchères
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
                 {!user && (
                   <Link href="/auth/register" className="inline-block">
-                    <Button size="lg" variant="outline" className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800 px-8 py-4 text-lg group">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800 px-8 py-4 text-lg group"
+                    >
                       Créer un Compte
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
@@ -153,7 +164,7 @@ export default function Home() {
             </div>
 
             {/* Hero Image */}
-            <motion.div 
+            <motion.div
               className="relative"
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -169,7 +180,7 @@ export default function Home() {
                   className="rounded-3xl shadow-2xl"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-3xl pointer-events-none"></div>
-                
+
                 {/* Floating Elements */}
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-lg pointer-events-none">
                   <div className="flex items-center">
@@ -177,10 +188,12 @@ export default function Home() {
                     <span className="text-sm font-medium">Enchère Active</span>
                   </div>
                 </div>
-                
+
                 <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-lg pointer-events-none">
                   <div className="text-center">
-                    <div className="text-lg font-bold text-violet-600">€2,450</div>
+                    <div className="text-lg font-bold text-violet-600">
+                      €2,450
+                    </div>
                     <div className="text-xs text-gray-600">Prix actuel</div>
                   </div>
                 </div>
@@ -193,15 +206,15 @@ export default function Home() {
       {/* Stats Section */}
       <section className="py-16 bg-white/50">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             className="grid grid-cols-2 md:grid-cols-4 gap-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {stats.map((stat, index) => (
-              <motion.div 
-                key={index} 
+              <motion.div
+                key={index}
                 className="text-center"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.2 }}
@@ -219,7 +232,7 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -229,11 +242,12 @@ export default function Home() {
               Pourquoi Choisir Auction Palace ?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Une plateforme moderne conçue pour offrir la meilleure expérience d'enchères
+              Une plateforme moderne conçue pour offrir la meilleure expérience
+              d'enchères
             </p>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -254,9 +268,7 @@ export default function Home() {
                       {feature.title}
                     </h3>
                   </div>
-                  <p className="text-gray-600">
-                    {feature.description}
-                  </p>
+                  <p className="text-gray-600">{feature.description}</p>
                 </Card>
               </motion.div>
             ))}
@@ -267,7 +279,7 @@ export default function Home() {
       {/* Testimonials Section */}
       <section className="py-20 bg-gradient-to-r from-violet-600 to-purple-600">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -280,8 +292,8 @@ export default function Home() {
               Découvrez les témoignages de notre communauté d'enchérisseurs
             </p>
           </motion.div>
-          
-          <motion.div 
+
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -302,12 +314,12 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="font-semibold">{testimonial.name}</h4>
-                      <p className="text-violet-200 text-sm">{testimonial.role}</p>
+                      <p className="text-violet-200 text-sm">
+                        {testimonial.role}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-violet-100">
-                    "{testimonial.text}"
-                  </p>
+                  <p className="text-violet-100">"{testimonial.text}"</p>
                 </Card>
               </motion.div>
             ))}
@@ -327,18 +339,26 @@ export default function Home() {
               Prêt à Commencer ?
             </h2>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              Rejoignez notre communauté d'enchérisseurs et découvrez des objets uniques
+              Rejoignez notre communauté d'enchérisseurs et découvrez des objets
+              uniques
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auctions" className="inline-block">
-                <Button size="lg" className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-8 py-4 text-lg group">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-8 py-4 text-lg group"
+                >
                   Explorer les Enchères
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
               {!user && (
                 <Link href="/auth/register" className="inline-block">
-                  <Button size="lg" variant="outline" className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800 px-8 py-4 text-lg group">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800 px-8 py-4 text-lg group"
+                  >
                     Créer un Compte
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
@@ -349,5 +369,5 @@ export default function Home() {
         </div>
       </section>
     </div>
-  )
+  );
 }

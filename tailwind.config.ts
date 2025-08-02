@@ -82,8 +82,10 @@ export default {
         "gradient-secondary": "linear-gradient(to right, #6366F1, #8B5CF6)",
         "gradient-success": "linear-gradient(to right, #10B981, #34D399)",
         "gradient-destructive": "linear-gradient(to right, #EF4444, #F87171)",
-        "gradient-card": "linear-gradient(145deg, rgba(139, 92, 246, 0.05), rgba(217, 70, 239, 0.05))",
-        "gradient-hero": "linear-gradient(to right, rgba(139, 92, 246, 0.9), rgba(217, 70, 239, 0.9))",
+        "gradient-card":
+          "linear-gradient(145deg, rgba(139, 92, 246, 0.05), rgba(217, 70, 239, 0.05))",
+        "gradient-hero":
+          "linear-gradient(to right, rgba(139, 92, 246, 0.9), rgba(217, 70, 239, 0.9))",
         "gradient-dark": "linear-gradient(to right, #1E293B, #334155)",
         "gradient-light": "linear-gradient(to right, #F8FAFC, #F1F5F9)",
       },

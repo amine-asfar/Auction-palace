@@ -1,76 +1,78 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import { useEffect } from "react"
-import { login } from "@/app/actions/auth"
-import { useActionState } from "react"
-import { useFormStatus } from "react-dom"
-import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { login } from "@/app/actions/auth";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
-// Composant pour le bouton de soumission avec état de chargement
 function SubmitButton() {
-  const { pending } = useFormStatus()
-  
+  const { pending } = useFormStatus();
+
   return (
-    <Button 
-      type="submit" 
-      className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg" 
+    <Button
+      type="submit"
+      className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 shadow-lg"
       disabled={pending}
     >
       {pending ? "Connexion en cours..." : "Se connecter"}
     </Button>
-  )
+  );
 }
 
 export default function LoginPage() {
-  const { toast } = useToast()
-  const router = useRouter()
-  const { isAuthenticated } = useAuth()
-  const searchParams = useSearchParams()
-  const registered = searchParams?.get('registered')
-  
-  // État initial du formulaire
-  const initialState = { errors: {} }
-  const [state, formAction] = useActionState(login, initialState)
-  
-  // Rediriger si déjà authentifié
+  const { toast } = useToast();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const searchParams = useSearchParams();
+  const registered = searchParams?.get("registered");
+
+  const initialState = { errors: {} };
+  const [state, formAction] = useActionState(login, initialState);
+
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/')
-      router.refresh()
+      router.push("/");
+      router.refresh();
     }
-  }, [isAuthenticated, router])
-  
-  // Afficher un toast si l'utilisateur vient de s'inscrire
+  }, [isAuthenticated, router]);
+
   useEffect(() => {
-    if (registered === 'true') {
+    if (registered === "true") {
       toast({
         title: "Inscription réussie",
-        description: "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
-      })
+        description:
+          "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
+      });
     }
-  }, [registered, toast])
-  
-  // Afficher un toast en cas d'erreur
+  }, [registered, toast]);
+
   useEffect(() => {
     if (state.errors?._form) {
       toast({
         variant: "destructive",
         title: "Échec de la connexion",
         description: state.errors._form[0],
-      })
+      });
     }
-  }, [state.errors, toast])
+  }, [state.errors, toast]);
 
-  // Gérer la redirection après une connexion réussie
   useEffect(() => {
     if (state.redirect) {
       toast({
@@ -78,11 +80,11 @@ export default function LoginPage() {
         description: "Bienvenue sur Auction Palace !",
         className: "bg-green-50 border-green-200",
         duration: 2000,
-      })
-      router.push(state.redirect)
-      router.refresh()
+      });
+      router.push(state.redirect);
+      router.refresh();
     }
-  }, [state.redirect, router, toast])
+  }, [state.redirect, router, toast]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-indigo-50 via-white to-violet-50">
@@ -104,7 +106,9 @@ export default function LoginPage() {
           <form action={formAction}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-base text-gray-700">Email</Label>
+                <Label htmlFor="email" className="text-base text-gray-700">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   name="email"
@@ -114,11 +118,15 @@ export default function LoginPage() {
                   className="h-12 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300"
                 />
                 {state.errors?.email && (
-                  <p className="text-sm text-destructive">{state.errors.email[0]}</p>
+                  <p className="text-sm text-destructive">
+                    {state.errors.email[0]}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-base text-gray-700">Mot de passe</Label>
+                <Label htmlFor="password" className="text-base text-gray-700">
+                  Mot de passe
+                </Label>
                 <Input
                   id="password"
                   name="password"
@@ -127,7 +135,9 @@ export default function LoginPage() {
                   className="h-12 border-indigo-200 focus:border-indigo-500 focus:ring-indigo-300"
                 />
                 {state.errors?.password && (
-                  <p className="text-sm text-destructive">{state.errors.password[0]}</p>
+                  <p className="text-sm text-destructive">
+                    {state.errors.password[0]}
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -135,8 +145,8 @@ export default function LoginPage() {
               <SubmitButton />
               <div className="text-center text-sm">
                 Vous n&apos;avez pas de compte?{" "}
-                <Link 
-                  href="/auth/register" 
+                <Link
+                  href="/auth/register"
                   className="text-indigo-600 hover:text-indigo-800 transition-colors duration-200 font-medium"
                 >
                   S&apos;inscrire
@@ -147,6 +157,5 @@ export default function LoginPage() {
         </Card>
       </motion.div>
     </div>
-  )
+  );
 }
-

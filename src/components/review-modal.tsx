@@ -1,21 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Star } from "lucide-react"
-import { createReview } from "@/app/actions/reviewActions"
-import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Star } from "lucide-react";
+import { createReview } from "@/app/actions/reviewActions";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ReviewModalProps {
-  isOpen: boolean
-  onClose: () => void
-  productId: string
-  sellerId: string
-  sellerName: string
-  productTitle: string
-  onReviewSubmitted: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  productId: string;
+  sellerId: string;
+  sellerName: string;
+  productTitle: string;
+  onReviewSubmitted: () => void;
 }
 
 export function ReviewModal({
@@ -25,69 +30,69 @@ export function ReviewModal({
   sellerId,
   sellerName,
   productTitle,
-  onReviewSubmitted
+  onReviewSubmitted,
 }: ReviewModalProps) {
-  const [rating, setRating] = useState(0)
-  const [hoveredRating, setHoveredRating] = useState(0)
-  const [comment, setComment] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const { toast } = useToast()
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (rating === 0) {
       toast({
         title: "Erreur",
         description: "Veuillez sélectionner une note",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     if (comment.trim().length === 0) {
       toast({
-        title: "Erreur", 
+        title: "Erreur",
         description: "Veuillez laisser un commentaire",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
-      setIsSubmitting(true)
-      
-      await createReview(sellerId, productId, rating, comment.trim())
-      
+      setIsSubmitting(true);
+
+      await createReview(sellerId, productId, rating, comment.trim());
+
       toast({
         title: "Avis publié !",
         description: "Votre avis a été publié avec succès",
-      })
-      
-      onReviewSubmitted()
-      onClose()
-      
-      // Reset form
-      setRating(0)
-      setComment("")
+      });
+
+      onReviewSubmitted();
+      onClose();
+
+      setRating(0);
+      setComment("");
     } catch (error) {
       toast({
         title: "Erreur",
-        description: error instanceof Error ? error.message : "Une erreur est survenue",
-        variant: "destructive"
-      })
+        description:
+          error instanceof Error ? error.message : "Une erreur est survenue",
+        variant: "destructive",
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleClose = () => {
     if (!isSubmitting) {
-      onClose()
-      setRating(0)
-      setComment("")
+      onClose();
+      setRating(0);
+      setComment("");
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -95,7 +100,7 @@ export function ReviewModal({
         <DialogHeader>
           <DialogTitle>Laisser un avis</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-600 mb-2">
@@ -105,7 +110,7 @@ export function ReviewModal({
               Vendeur: <span className="font-medium">{sellerName}</span>
             </p>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Star Rating */}
             <div className="space-y-2">
@@ -143,7 +148,9 @@ export function ReviewModal({
                 maxLength={500}
                 disabled={isSubmitting}
               />
-              <p className="text-xs text-gray-500">{comment.length}/500 caractères</p>
+              <p className="text-xs text-gray-500">
+                {comment.length}/500 caractères
+              </p>
             </div>
 
             {/* Actions */}
@@ -158,7 +165,9 @@ export function ReviewModal({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || rating === 0 || comment.trim().length === 0}
+                disabled={
+                  isSubmitting || rating === 0 || comment.trim().length === 0
+                }
                 className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700"
               >
                 {isSubmitting ? "Publication..." : "Publier l'avis"}
@@ -168,5 +177,5 @@ export function ReviewModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+}
