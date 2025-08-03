@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏛️ Auction Palace
 
-## Getting Started
+Une plateforme d'enchères moderne et interactive construite avec Next.js, Supabase et Stripe.
 
-First, run the development server:
+## ✨ Fonctionnalités
+
+- 🎯 **Enchères en temps réel** - Suivez les enchères en direct
+- 💳 **Paiements sécurisés** - Intégration Stripe pour les transactions
+- 🔐 **Authentification** - Système d'authentification complet avec Supabase
+- 👤 **Profils utilisateurs** - Gestion des profils et vérification
+- 🛡️ **Administration** - Panel d'administration
+- 📱 **Interface responsive** - Design moderne et adaptatif
+- ⚡ **Performance optimisée** - Construit avec Next.js 15 et Turbopack
+
+## 🚀 Installation
+
+### Prérequis
+
+- [Node.js](https://nodejs.org/) (version 18 ou supérieure)
+- [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/) ou [pnpm](https://pnpm.io/)
+- Compte [Supabase](https://supabase.com/)
+- Compte [Stripe](https://stripe.com/)
+
+### 1. Cloner le projet
+
+```bash
+git clone https://github.com/amine-asfar/Auction-palace
+cd Auction-palace
+```
+
+### 2. Installer les dépendances
+
+```bash
+npm install
+# ou
+yarn install
+# ou
+pnpm install
+```
+
+### 3. Configuration des variables d'environnement
+
+Créez un fichier `.env` à la racine du projet et ajoutez les variables suivantes :
+
+```env
+# Supabase Configuration
+NEXT_SUPABASE_SERVICE_KEY=your_supabase_service_role_key
+NEXT_SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Stripe Configuration
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_SECRET_KEY=your_stripe_secret_key
+```
+
+#### 🔧 Configuration Supabase
+
+1. Créez un projet sur [Supabase](https://supabase.com/)
+2. Allez dans **Settings > API** dans votre dashboard Supabase
+3. Copiez les valeurs suivantes :
+   - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+   - **anon public** → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **service_role secret** → `NEXT_SUPABASE_SERVICE_KEY`
+   - **JWT Secret** → `NEXT_SUPABASE_JWT_SECRET`
+
+#### 💳 Configuration Stripe
+
+1. Créez un compte sur [Stripe](https://stripe.com/)
+2. Allez dans **Developers > API keys**
+3. Copiez les clés suivantes :
+   - **Publishable key** → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+   - **Secret key** → `STRIPE_SECRET_KEY`
+
+### 4. Lancer le serveur de développement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur pour voir l'application.
